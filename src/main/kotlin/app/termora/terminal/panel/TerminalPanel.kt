@@ -811,13 +811,6 @@ class TerminalPanel(val tab: TerminalTab?, val terminal: Terminal, private val w
                         this
                     )
                 )
-            } else if (name == "Transfer") {
-                addVisualWindow(
-                    TransferVisualWindow(
-                        dataProvider.getData(DataProviders.TerminalTab) as SSHTerminalTab,
-                        this
-                    )
-                )
             } else if (name == "CommandHistory") {
                 addVisualWindow(
                     CommandHistoryVisualWindow(

@@ -23,9 +23,4 @@ object Actions {
      */
     const val TERMINAL_LOGGER = "TerminalLogAction"
 
-    /**
-     * 打开 SFTP Tab Action
-     */
-    const val SFTP = "SFTPAction"
-
 }

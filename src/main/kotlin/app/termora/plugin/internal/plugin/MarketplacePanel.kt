@@ -141,7 +141,7 @@ class MarketplacePanel : JPanel(BorderLayout()), Disposable {
     private fun createRetry(): JComponent {
         val box = Box.createHorizontalBox()
         box.add(Box.createHorizontalGlue())
-        box.add(JXHyperlink(object : AbstractAction(I18n.getString("termora.transport.table.contextmenu.refresh")) {
+        box.add(JXHyperlink(object : AbstractAction(I18n.getString("termora.welcome.contextmenu.refresh")) {
             override fun actionPerformed(e: ActionEvent) {
                 marketplaceManager.clear()
                 reload()

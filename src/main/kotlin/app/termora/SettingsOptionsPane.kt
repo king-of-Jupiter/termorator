@@ -10,7 +10,6 @@ import app.termora.terminal.CursorStyle
 import app.termora.terminal.DataKey
 import app.termora.terminal.panel.FloatingToolbarPanel
 import app.termora.terminal.panel.TerminalPanel
-import app.termora.transfer.TransportTerminalTab
 import com.formdev.flatlaf.FlatClientProperties
 import com.formdev.flatlaf.extras.components.FlatComboBox
 import com.formdev.flatlaf.extras.components.FlatPopupMenu
@@ -91,7 +90,6 @@ class SettingsOptionsPane : OptionsPane() {
         options.add(AppearanceOption())
         options.add(TerminalOption())
         options.add(KeyShortcutsOption())
-        options.add(SFTPOption())
         options.add(AboutOption())
 
         for (extension in extensions) {
@@ -400,11 +398,8 @@ class SettingsOptionsPane : OptionsPane() {
             builder.add("${I18n.getString("termora.settings.appearance.tab-order")}:").xy(1, rows)
                 .add(tabOrderComboBox).xy(3, rows).apply { rows += step }
 
-            val confirmTabCloseBox = Box.createHorizontalBox()
-            confirmTabCloseBox.add(JLabel("${I18n.getString("termora.settings.appearance.confirm-tab-close")}:"))
-            confirmTabCloseBox.add(Box.createHorizontalStrut(8))
-            confirmTabCloseBox.add(confirmTabCloseComBoBox)
-            builder.add(confirmTabCloseBox).xyw(1, rows, 3).apply { rows += step }
+            builder.add("${I18n.getString("termora.settings.appearance.confirm-tab-close")}:").xy(1, rows)
+                .add(confirmTabCloseComBoBox).xy(3, rows).apply { rows += step }
 
             return builder.build()
         }
@@ -692,218 +687,6 @@ class SettingsOptionsPane : OptionsPane() {
 
 
             return panel
-        }
-    }
-
-    private inner class SFTPOption : JPanel(BorderLayout()), Option {
-
-        private val editCommandField = OutlineTextField(255)
-        private val sftpCommandField = OutlineTextField(255)
-        private val defaultDirectoryField = OutlineTextField(255)
-        private val browseDirectoryBtn = JButton(Icons.folder)
-        private val browseEditCommandBtn = JButton(Icons.folder)
-        private val pinTabComboBox = YesOrNoComboBox()
-        private val preserveModificationTimeComboBox = YesOrNoComboBox()
-        private val doubleClickComboBox = OutlineComboBox<String>()
-        private val sftp get() = database.sftp
-
-        init {
-            initView()
-            initEvents()
-            add(getCenterComponent(), BorderLayout.CENTER)
-        }
-
-        private fun initEvents() {
-            editCommandField.document.addDocumentListener(object : DocumentAdaptor() {
-                override fun changedUpdate(e: DocumentEvent) {
-                    sftp.editCommand = editCommandField.text
-                }
-            })
-
-
-            sftpCommandField.document.addDocumentListener(object : DocumentAdaptor() {
-                override fun changedUpdate(e: DocumentEvent) {
-                    sftp.sftpCommand = sftpCommandField.text
-                }
-            })
-
-            defaultDirectoryField.document.addDocumentListener(object : DocumentAdaptor() {
-                override fun changedUpdate(e: DocumentEvent) {
-                    sftp.defaultDirectory = defaultDirectoryField.text
-                }
-            })
-
-            pinTabComboBox.addItemListener(object : ItemListener {
-                override fun itemStateChanged(e: ItemEvent) {
-                    if (e.stateChange != ItemEvent.SELECTED) return
-                    sftp.pinTab = pinTabComboBox.selectedItem as Boolean
-                    for (window in TermoraFrameManager.getInstance().getWindows()) {
-                        val evt = AnActionEvent(window, StringUtils.EMPTY, EventObject(window))
-                        val manager = evt.getData(DataProviders.TerminalTabbedManager) ?: continue
-
-                        if (sftp.pinTab) {
-                            if (manager.getTerminalTabs().none { it is TransportTerminalTab }) {
-                                manager.addTerminalTab(1, TransportTerminalTab(), false)
-                            }
-                        }
-
-                        // 刷新状态
-                        manager.refreshTerminalTabs()
-                    }
-                }
-
-            })
-
-            doubleClickComboBox.addItemListener(object : ItemListener {
-                override fun itemStateChanged(e: ItemEvent) {
-                    if (e.stateChange != ItemEvent.SELECTED) return
-                    sftp.dbClickBehavior = doubleClickComboBox.selectedItem as String
-                }
-            })
-
-            preserveModificationTimeComboBox.addItemListener {
-                if (it.stateChange == ItemEvent.SELECTED) {
-                    sftp.preserveModificationTime = preserveModificationTimeComboBox.selectedItem as Boolean
-                }
-            }
-
-            browseDirectoryBtn.addActionListener(object : AbstractAction() {
-                override fun actionPerformed(e: ActionEvent) {
-                    val chooser = FileChooser()
-                    chooser.allowsMultiSelection = false
-                    chooser.defaultDirectory = StringUtils.defaultIfBlank(
-                        defaultDirectoryField.text,
-                        SystemUtils.USER_HOME
-                    )
-                    chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                    chooser.showOpenDialog(owner).thenAccept { files ->
-                        if (files.isNotEmpty()) defaultDirectoryField.text = files.first().absolutePath
-                    }
-                }
-            })
-
-            browseEditCommandBtn.addActionListener(object : AbstractAction() {
-                override fun actionPerformed(e: ActionEvent) {
-                    val chooser = FileChooser()
-                    chooser.allowsMultiSelection = false
-                    chooser.fileSelectionMode = JFileChooser.FILES_ONLY
-
-                    if (SystemInfo.isMacOS) {
-                        chooser.defaultDirectory = "/Applications"
-                    } else {
-                        if (SystemInfo.isWindows) {
-                            val pszPath = CharArray(WinDef.MAX_PATH)
-                            Shell32.INSTANCE.SHGetFolderPath(
-                                null,
-                                ShlObj.CSIDL_DESKTOPDIRECTORY, null, ShlObj.SHGFP_TYPE_CURRENT,
-                                pszPath
-                            )
-                            chooser.defaultDirectory = Native.toString(pszPath)
-                        } else {
-                            chooser.defaultDirectory = SystemUtils.USER_HOME
-                        }
-                    }
-
-                    chooser.showOpenDialog(owner).thenAccept { files ->
-                        if (files.isNotEmpty()) {
-                            val file = files.first()
-                            if (SystemInfo.isMacOS) {
-                                editCommandField.text = "open -a ${file.absolutePath} {0}"
-                            } else {
-                                editCommandField.text = "${file.absolutePath} {0}"
-                            }
-                        }
-                    }
-                }
-            })
-        }
-
-
-        private fun initView() {
-            if (SystemInfo.isWindows || SystemInfo.isLinux) {
-                editCommandField.placeholderText = "notepad {0}"
-            } else if (SystemInfo.isMacOS) {
-                editCommandField.placeholderText = "open -a TextEdit {0}"
-            }
-
-            if (SystemInfo.isWindows) {
-                sftpCommandField.placeholderText = "sftp.exe"
-            } else {
-                sftpCommandField.placeholderText = "sftp"
-            }
-
-            editCommandField.trailingComponent = browseEditCommandBtn
-
-            defaultDirectoryField.placeholderText = SystemUtils.USER_HOME
-            defaultDirectoryField.trailingComponent = browseDirectoryBtn
-
-            defaultDirectoryField.text = sftp.defaultDirectory
-            editCommandField.text = sftp.editCommand
-            sftpCommandField.text = sftp.sftpCommand
-            pinTabComboBox.selectedItem = sftp.pinTab
-            preserveModificationTimeComboBox.selectedItem = sftp.preserveModificationTime
-
-            doubleClickComboBox.renderer = object : DefaultListCellRenderer() {
-                override fun getListCellRendererComponent(
-                    list: JList<*>?,
-                    value: Any?,
-                    index: Int,
-                    isSelected: Boolean,
-                    cellHasFocus: Boolean
-                ): Component? {
-                    var text = value?.toString()
-                    if (value == "Edit") text = I18n.getString("termora.keymgr.edit")
-                    if (value == "Transfer") text = getTitle()
-                    return super.getListCellRendererComponent(list, text, index, isSelected, cellHasFocus)
-                }
-            }
-
-            doubleClickComboBox.addItem("Transfer")
-            doubleClickComboBox.addItem("Edit")
-
-            doubleClickComboBox.selectedItem = sftp.dbClickBehavior
-        }
-
-        override fun getIcon(isSelected: Boolean): Icon {
-            return Icons.folder
-        }
-
-        override fun getTitle(): String {
-            return I18n.getString("termora.transport.sftp")
-        }
-
-        override fun getJComponent(): JComponent {
-            return this
-        }
-
-        private fun getCenterComponent(): JComponent {
-            val layout = FormLayout(
-                "left:pref, $FORM_MARGIN, default:grow, 30dlu",
-                "pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref"
-            )
-
-            val box = Box.createHorizontalBox()
-            box.add(JLabel("${I18n.getString("termora.settings.sftp.preserve-time")}:"))
-            box.add(Box.createHorizontalStrut(8))
-            box.add(preserveModificationTimeComboBox)
-
-            var rows = 1
-            val builder = FormBuilder.create().layout(layout).debug(false)
-            builder.add("${I18n.getString("termora.settings.sftp.fixed-tab")}:").xy(1, rows)
-            builder.add(pinTabComboBox).xy(3, rows).apply { rows += 2 }
-            builder.add("${I18n.getString("termora.settings.sftp.edit-command")}:").xy(1, rows)
-            builder.add(editCommandField).xy(3, rows).apply { rows += 2 }
-            builder.add("${I18n.getString("termora.tabbed.contextmenu.sftp-command")}:").xy(1, rows)
-            builder.add(sftpCommandField).xy(3, rows).apply { rows += 2 }
-            builder.add("${I18n.getString("termora.settings.sftp.db-click-behavior")}:").xy(1, rows)
-            builder.add(doubleClickComboBox).xy(3, rows).apply { rows += 2 }
-            builder.add("${I18n.getString("termora.settings.sftp.default-directory")}:").xy(1, rows)
-            builder.add(defaultDirectoryField).xy(3, rows).apply { rows += 2 }
-            builder.add(box).xyw(1, rows, 3).apply { rows += 2 }
-
-
-            return builder.build()
-
         }
     }
 
