@@ -79,7 +79,7 @@ jobs:
         run: .\gradlew :check-license && .\gradlew classes -x test
 
       - name: JLink
-        run: .\gradlew :jar :copy-dependencies :plugins:migration:build :jlink
+        run: .\gradlew :jar :copy-dependencies :jlink
 
       - name: Package
         run: .\gradlew :jpackage && .\gradlew :dist

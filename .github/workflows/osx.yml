@@ -91,7 +91,7 @@ jobs:
 
       - name: JLink
         shell: bash
-        run: ./gradlew :jar :copy-dependencies :plugins:migration:build :jlink
+        run: ./gradlew :jar :copy-dependencies :jlink
 
       - name: Package
         shell: bash

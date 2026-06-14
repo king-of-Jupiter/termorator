@@ -45,7 +45,7 @@ jobs:
 
       - name: JLink
         shell: bash
-        run: ./docker-run.sh $DOCKER_NAME bash -c './gradlew :jar :copy-dependencies :plugins:migration:build :jlink'
+        run: ./docker-run.sh $DOCKER_NAME bash -c './gradlew :jar :copy-dependencies :jlink'
 
       - name: Package Deb
         shell: bash
