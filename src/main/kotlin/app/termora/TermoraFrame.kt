@@ -135,6 +135,20 @@ class TermoraFrame : JFrame(), DataProvider {
                     }
 
                     override fun getIcon(isSelected: Boolean): Icon {
+                        // Check if OS was detected
+                        val osIconName = host.options.extras["osIcon"]
+                        if (osIconName != null) {
+                            try {
+                                val osType = app.termora.plugin.internal.ssh.OSDetector.OSType.valueOf(osIconName)
+                                val icon = osType.getIcon()
+                                if (icon is DynamicIcon) {
+                                    return if (isSelected && !FlatLaf.isLafDark()) icon.dark else icon
+                                }
+                                return icon
+                            } catch (_: Exception) {
+                                // Fall through to default
+                            }
+                        }
                         if (isSelected) {
                             if (!FlatLaf.isLafDark()) {
                                 return Icons.terminal.dark
@@ -197,7 +211,7 @@ class TermoraFrame : JFrame(), DataProvider {
             iconImages = images
         }
 
-        minimumSize = Dimension(640, 400)
+        minimumSize = Dimension(720, 450)
 
         val glassPane = GlassPane()
         rootPane.glassPane = glassPane

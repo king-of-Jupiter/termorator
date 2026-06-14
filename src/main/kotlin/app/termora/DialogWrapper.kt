@@ -138,14 +138,14 @@ abstract class DialogWrapper(owner: Window?) : JDialog(owner) {
 
         box.border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, DynamicColor.BorderColor),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+            BorderFactory.createEmptyBorder(10, 16, 10, 16)
         )
 
         val actions = createActions()
         for (i in actions.size - 1 downTo 0) {
             box.add(createJButtonForAction(actions[i]))
             if (i != 0) {
-                box.add(Box.createHorizontalStrut(8))
+                box.add(Box.createHorizontalStrut(10))
             }
         }
 

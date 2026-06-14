@@ -1,7 +1,9 @@
 package app.termora.tree
 
+import app.termora.DynamicIcon
 import app.termora.Host
 import app.termora.Icons
+import app.termora.plugin.internal.ssh.OSDetector
 import app.termora.protocol.ProtocolProvider
 import com.formdev.flatlaf.icons.FlatTreeClosedIcon
 import com.formdev.flatlaf.icons.FlatTreeOpenIcon
@@ -51,6 +53,22 @@ open class HostTreeNode(host: Host) : SimpleTreeNode<Host>(host) {
         }
 
         if (host.isFolder) return if (expanded) FlatTreeOpenIcon() else FlatTreeClosedIcon()
+
+        // Check if OS was detected
+        val osIconName = host.options.extras["osIcon"]
+        if (osIconName != null) {
+            try {
+                val osType = OSDetector.OSType.valueOf(osIconName)
+                val icon = osType.getIcon()
+                if (icon is DynamicIcon) {
+                    return if (selected && hasFocus) icon.dark else icon
+                }
+                return icon
+            } catch (_: Exception) {
+                // Invalid OS type, fall through to protocol icon
+            }
+        }
+
         val icon = ProtocolProvider.valueOf(host.protocol)?.getIcon() ?: Icons.terminal
         return if (selected && hasFocus) icon.dark else icon
     }

@@ -7,12 +7,13 @@ import app.termora.account.AccountPlugin
 import app.termora.plugin.internal.badge.BadgePlugin
 import app.termora.plugin.internal.extension.DynamicExtensionPlugin
 import app.termora.plugin.internal.local.LocalInternalPlugin
-import app.termora.plugin.internal.plugin.PluginInternalPlugin
 import app.termora.plugin.internal.rdp.RDPInternalPlugin
 import app.termora.plugin.internal.ssh.SSHInternalPlugin
 import app.termora.plugin.internal.telnet.TelnetInternalPlugin
 import app.termora.plugin.internal.updater.UpdaterPlugin
 import app.termora.plugin.internal.wsl.WSLInternalPlugin
+import app.termora.plugins.serial.SerialPlugin
+import app.termora.plugins.sync.SyncPlugin
 import app.termora.swingCoroutineScope
 import app.termora.terminal.panel.vw.FloatingToolbarPlugin
 import com.formdev.flatlaf.util.SystemInfo
@@ -101,8 +102,6 @@ internal class PluginManager private constructor() {
 
         // 动态注册扩展
         plugins.add(PluginDescriptor(DynamicExtensionPlugin(), origin = PluginOrigin.Internal, version = version))
-        // plugin
-        plugins.add(PluginDescriptor(PluginInternalPlugin(), origin = PluginOrigin.Internal, version = version))
         // account plugin
         plugins.add(PluginDescriptor(AccountPlugin(), origin = PluginOrigin.Internal, version = version))
         // badge plugin
@@ -126,6 +125,10 @@ internal class PluginManager private constructor() {
         }
         // floating
         plugins.add(PluginDescriptor(FloatingToolbarPlugin(), origin = PluginOrigin.Internal, version = version))
+        // sync plugin
+        plugins.add(PluginDescriptor(SyncPlugin(), origin = PluginOrigin.Internal, version = version))
+        // serial plugin
+        plugins.add(PluginDescriptor(SerialPlugin(), origin = PluginOrigin.Internal, version = version))
     }
 
     private fun loadSystemPlugins() {

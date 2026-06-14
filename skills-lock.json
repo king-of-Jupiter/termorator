@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "kotlin-coroutines-flows": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-coroutines-flows/SKILL.md",
+      "computedHash": "b6bb6a1966e6dfe830112d741c96101f4cf3f69796b8c1c72aec9dae823290cc"
+    },
+    "kotlin-exposed-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-exposed-patterns/SKILL.md",
+      "computedHash": "cf1be341311622e00718e54895e07bbae2032b0898f9c0b59fcc9509a040e19c"
+    },
+    "kotlin-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-patterns/SKILL.md",
+      "computedHash": "5fc6cf22b6e4028c7fa0b4e0814b1c9bce4c0d1c2defb17511efd170da7bc064"
+    }
+  }
+}

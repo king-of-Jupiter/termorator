@@ -32,8 +32,8 @@ abstract class OptionsPane : JPanel(BorderLayout()), Disposable {
 
     private fun initView() {
 
-        tabList.fixedCellHeight = (UIManager.getInt("Tree.rowHeight") * 1.2).toInt()
-        tabList.fixedCellWidth = 170
+        tabList.fixedCellHeight = (UIManager.getInt("Tree.rowHeight") * 1.3).toInt()
+        tabList.fixedCellWidth = 180
         tabList.selectionMode = ListSelectionModel.SINGLE_SELECTION
         tabList.border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 0, 1, DynamicColor.BorderColor),
@@ -59,8 +59,23 @@ abstract class OptionsPane : JPanel(BorderLayout()), Disposable {
                     }
                 }
 
-                // Больше отступов для читаемости
-                border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
+                // Apple-style sidebar item: rounded, with accent selection
+                if (isSelected) {
+                    val accent = UIManager.getColor("Component.accentColor")
+                        ?: UIManager.getColor("List.selectionBackground")
+                        ?: background
+                    background = Color(accent.red, accent.green, accent.blue, if (FlatLaf.isLafDark()) 40 else 25)
+                    foreground = accent
+                    border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createEmptyBorder(2, 2, 2, 2),
+                        BorderFactory.createEmptyBorder(4, 10, 4, 10)
+                    )
+                } else {
+                    border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createEmptyBorder(2, 2, 2, 2),
+                        BorderFactory.createEmptyBorder(4, 10, 4, 10)
+                    )
+                }
 
                 return c
             }
@@ -185,10 +200,6 @@ abstract class OptionsPane : JPanel(BorderLayout()), Disposable {
         fun getIdentifier(): String = javaClass.name
         fun getAnchor(): Anchor = Anchor.Null
         fun onSelected() {}
-    }
-
-    interface PluginOption : Option {
-        override fun getAnchor(): Anchor = Anchor.After("Plugin")
     }
 
 

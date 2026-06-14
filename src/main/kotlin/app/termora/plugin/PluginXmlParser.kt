@@ -2,7 +2,6 @@ package app.termora.plugin
 
 import app.termora.Application
 import app.termora.Icons
-import app.termora.plugin.internal.plugin.PluginSVGIcon
 import org.apache.commons.lang3.StringUtils
 import org.semver4j.Semver
 import org.w3c.dom.Document
@@ -79,9 +78,9 @@ internal object PluginXmlParser {
 
         var myIcon: Icon = Icons.plugin
         if (icon != null && darkIcon != null) {
-            myIcon = PluginSVGIcon(icon, darkIcon)
+            myIcon = PluginSVGIcon.create(icon, darkIcon)
         } else if (icon != null) {
-            myIcon = PluginSVGIcon(icon)
+            myIcon = PluginSVGIcon.create(icon)
         }
 
         return MyPluginDescriptor(

@@ -179,7 +179,7 @@ class TermoraFencePanel(
             scrollPane.horizontalScrollBar.unitIncrement = 16
             scrollPane.border = BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, DynamicColor.BorderColor),
-                BorderFactory.createEmptyBorder(4, 4, 0, 4)
+                BorderFactory.createEmptyBorder(6, 6, 0, 6)
             )
 
             add(box, BorderLayout.NORTH)

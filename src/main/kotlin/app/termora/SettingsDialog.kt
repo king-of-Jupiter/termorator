@@ -15,10 +15,10 @@ internal class SettingsDialog(owner: Window) : DialogWrapper(owner) {
     private val properties get() = DatabaseManager.getInstance().properties
 
     init {
-        size = Dimension(
-            UIScale.scale(UIManager.getInt("Dialog.width")),
-            UIScale.scale(UIManager.getInt("Dialog.height"))
-        )
+        val w = UIScale.scale(UIManager.getInt("Dialog.width")).coerceAtLeast(860)
+        val h = UIScale.scale(UIManager.getInt("Dialog.height")).coerceAtLeast(580)
+        size = Dimension(w, h)
+        minimumSize = Dimension(780, 520)
         isModal = true
         title = I18n.getString("termora.setting")
         setLocationRelativeTo(null)
@@ -49,7 +49,10 @@ internal class SettingsDialog(owner: Window) : DialogWrapper(owner) {
         val panel = JPanel(BorderLayout())
         panel.add(optionsPane, BorderLayout.CENTER)
         panel.background = UIManager.getColor("window")
-        panel.border = BorderFactory.createMatteBorder(1, 0, 0, 0, DynamicColor.BorderColor)
+        panel.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DynamicColor.BorderColor),
+            BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        )
 
         return panel
     }

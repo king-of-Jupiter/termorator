@@ -46,9 +46,6 @@ class ApplicationRunner {
         // 加载设置
         loadSettings()
 
-        // 统计
-        enableAnalytics()
-
         // 设置 LAF
         setupLaf()
 
@@ -356,16 +353,6 @@ class ApplicationRunner {
             )
             exitProcess(1)
         }
-    }
-
-    /**
-     * 统计 https://mixpanel.com
-     */
-    private fun enableAnalytics() {
-        if (Application.isUnknownVersion()) {
-            return
-        }
-        MixpanelService.getInstance().push("launch")
     }
 
 

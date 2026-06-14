@@ -25,36 +25,38 @@ object WSLSupport {
 
         try {
             val baseKeyPath = "Software\\Microsoft\\Windows\\CurrentVersion\\Lxss"
+            if (!Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER, baseKeyPath)) {
+                return emptyList()
+            }
             val guids = Advapi32Util.registryGetKeys(WinReg.HKEY_CURRENT_USER, baseKeyPath)
 
             for (guid in guids) {
                 val key = baseKeyPath + "\\" + guid
                 try {
-                    if (Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER, key)) {
-                        val distroName =
-                            Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, key, "DistributionName")
-                        val basePath = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, key, "BasePath")
-                        val flavor = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, key, "Flavor")
-                        if (StringUtils.isAnyBlank(distroName, guid, basePath, flavor)) continue
-                        distributions.add(
-                            WSLDistribution(
-                                guid = guid,
-                                flavor = flavor,
-                                basePath = basePath,
-                                distributionName = distroName
-                            )
+                    if (!Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER, key)) continue
+
+                    val distroName = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, key, "DistributionName")
+                        ?: continue
+                    val basePath = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, key, "BasePath")
+                        ?: continue
+                    val flavor = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, key, "Flavor")
+                        ?: continue
+
+                    if (StringUtils.isAnyBlank(distroName, guid, basePath, flavor)) continue
+                    distributions.add(
+                        WSLDistribution(
+                            guid = guid,
+                            flavor = flavor,
+                            basePath = basePath,
+                            distributionName = distroName
                         )
-                    }
-                } catch (e: Exception) {
-                    if (log.isWarnEnabled) {
-                        log.warn(e.message, e)
-                    }
+                    )
+                } catch (_: Exception) {
+                    // Skip entries with missing or invalid registry values
                 }
             }
-        } catch (e: Exception) {
-            if (log.isWarnEnabled) {
-                log.warn(e.message, e)
-            }
+        } catch (_: Exception) {
+            // Lxss registry key not found — WSL not configured
         }
 
         return distributions

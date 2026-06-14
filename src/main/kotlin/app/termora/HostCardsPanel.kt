@@ -35,9 +35,9 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
     private val contentPanel = JPanel(GridBagLayout())
     private val scrollPane = JScrollPane(contentPanel)
 
-    private val cardWidth = 190
-    private val cardHeight = 76
-    private val iconSize = 30
+    private val cardWidth = 220
+    private val cardHeight = 64
+    private val iconSize = 28
 
     private var filterText: String = StringUtils.EMPTY
 
@@ -196,6 +196,25 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
         return themed.derive(iconSize, iconSize)
     }
 
+    private fun getHostIcon(host: Host): Icon {
+        // Check if OS was detected
+        val osIconName = host.options.extras["osIcon"]
+        if (osIconName != null) {
+            try {
+                val osType = app.termora.plugin.internal.ssh.OSDetector.OSType.valueOf(osIconName)
+                val base = osType.getIcon()
+                if (base is DynamicIcon) {
+                    val themed = if (FlatLaf.isLafDark()) base.dark else base
+                    return themed.derive(iconSize, iconSize)
+                }
+                return base
+            } catch (e: Exception) {
+                // Invalid OS type, fall through to protocol icon
+            }
+        }
+        return protocolIcon(host.protocol)
+    }
+
     /**
      * Карточка с плавной hover-анимацией и pressed-эффектом.
      */
@@ -216,8 +235,9 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
 
         init {
             isOpaque = false
+            isFocusable = false
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            border = BorderFactory.createEmptyBorder(10, 12, 10, 12)
+            border = BorderFactory.createEmptyBorder(8, 10, 8, 10)
             preferredSize = Dimension(cardWidth, cardHeight)
             maximumSize = preferredSize
             addMouseListener(object : MouseAdapter() {
@@ -267,16 +287,40 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
             val g2 = g.create() as Graphics2D
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val arc = UIManager.getInt("Component.arc").coerceAtLeast(10)
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+                val arc = 14
 
                 val alpha = (hoverAlpha / 255f).coerceIn(0f, 1f)
                 val bg = if (alpha > 0.01f) blend(normalBg, hoverBg, alpha) else normalBg
                 val finalBg = if (pressed) bg.darker() else bg
 
+                // Multi-layer shadow for depth (Apple style)
+                if (alpha > 0.01f) {
+                    // Outer shadow - wide, soft
+                    val s1 = (alpha * 18).toInt().coerceIn(0, 18)
+                    g2.color = Color(0, 0, 0, s1)
+                    g2.fillRoundRect(0, 3, width - 1, height - 1, arc, arc)
+                    // Inner shadow - tighter
+                    val s2 = (alpha * 12).toInt().coerceIn(0, 12)
+                    g2.color = Color(0, 0, 0, s2)
+                    g2.fillRoundRect(0, 1, width - 1, height - 1, arc, arc)
+                }
+
+                // Card background
                 g2.color = finalBg
-                g2.fillRoundRect(0, 0, width - 1, height - 1, arc, arc)
-                g2.color = DynamicColor.BorderColor
-                g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
+                g2.fillRoundRect(0, 0, width - 1, height - 2, arc, arc)
+
+                // Subtle top highlight (Apple's signature light reflection)
+                val highlightAlpha = (alpha * 40 + 15).toInt().coerceIn(15, 55)
+                g2.color = Color(255, 255, 255, highlightAlpha)
+                g2.fillRoundRect(0, 0, width - 1, 1, arc, arc)
+
+                // Border - very thin, barely visible
+                g2.color = if (alpha > 0.2f)
+                    blend(DynamicColor.BorderColor, UIManager.getColor("Component.accentColor") ?: DynamicColor.BorderColor, alpha * 0.2f)
+                else
+                    DynamicColor.BorderColor
+                g2.drawRoundRect(0, 0, width - 1, height - 2, arc, arc)
             } finally {
                 g2.dispose()
             }
@@ -292,16 +336,27 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
     }
 
     private inner class HostCard(private val host: Host) : RoundedCard() {
+        var loading = false
+            private set
+        private var loadingProgress = 0f
+        private var loadingTimer: Timer? = null
+
         init {
             layout = BorderLayout(8, 0)
 
-            val iconLabel = JLabel(protocolIcon(host.protocol))
+            // Use OS-specific icon if detected, otherwise protocol icon
+            val icon = getHostIcon(host)
+            val iconLabel = JLabel(icon)
             iconLabel.verticalAlignment = SwingConstants.CENTER
             add(iconLabel, BorderLayout.WEST)
 
             val box = Box.createVerticalBox()
+            // Dynamic font size based on card height
+            val nameFontSize = (cardHeight * 0.22f).coerceIn(12f, 16f)
+            val subFontSize = (cardHeight * 0.15f).coerceIn(9f, 12f)
+
             val nameLabel = JLabel(host.name)
-            nameLabel.font = nameLabel.font.deriveFont(Font.BOLD)
+            nameLabel.font = nameLabel.font.deriveFont(Font.BOLD, nameFontSize)
             nameLabel.alignmentX = LEFT_ALIGNMENT
             box.add(nameLabel)
 
@@ -310,30 +365,109 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
                 box.add(Box.createVerticalStrut(2))
                 val subLabel = JLabel(subtitle)
                 subLabel.foreground = DynamicColor("textInactiveText")
-                subLabel.font = subLabel.font.deriveFont(subLabel.font.size - 1.5f)
+                subLabel.font = subLabel.font.deriveFont(subFontSize)
                 subLabel.alignmentX = LEFT_ALIGNMENT
                 box.add(subLabel)
+            }
+
+            // Add protocol/port info if there's space
+            val extraInfo = extraInfoOf(host)
+            if (extraInfo.isNotBlank() && cardHeight > 55) {
+                box.add(Box.createVerticalStrut(1))
+                val extraLabel = JLabel(extraInfo)
+                extraLabel.foreground = DynamicColor("textInactiveText")
+                extraLabel.font = extraLabel.font.deriveFont(subFontSize - 1f)
+                extraLabel.alignmentX = LEFT_ALIGNMENT
+                box.add(extraLabel)
             }
             add(box, BorderLayout.CENTER)
 
             toolTipText = if (host.remark.isNotBlank()) host.remark else subtitle
 
             addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent) {
-                    if (SwingUtilities.isLeftMouseButton(e) && e.clickCount == 2) {
+                override fun mousePressed(e: MouseEvent) {
+                    if (e.isPopupTrigger) {
+                        hostTreeProvider()?.showContextmenuForHost(host, this@HostCard, e.x, e.y)
+                        return
+                    }
+
+                    val isLeft = SwingUtilities.isLeftMouseButton(e)
+                    val isMiddle = SwingUtilities.isMiddleMouseButton(e)
+
+                    if (isLeft || isMiddle) {
+                        if (loading) return
+                        startLoading()
+                        val selectTab = isLeft
                         actionManager.getAction(OpenHostAction.OPEN_HOST)
-                            ?.actionPerformed(OpenHostActionEvent(this@HostCard, host, e))
+                            ?.actionPerformed(OpenHostActionEvent(this@HostCard, host, e, selected = selectTab))
+                        Timer(3000) { stopLoading() }.apply { isRepeats = false; start() }
                     }
                 }
 
-                override fun mousePressed(e: MouseEvent) = maybeShowContextmenu(e)
-                override fun mouseReleased(e: MouseEvent) = maybeShowContextmenu(e)
-
-                private fun maybeShowContextmenu(e: MouseEvent) {
-                    if (e.isPopupTrigger.not()) return
-                    hostTreeProvider()?.showContextmenuForHost(host, this@HostCard, e.x, e.y)
+                override fun mouseReleased(e: MouseEvent) {
+                    if (e.isPopupTrigger) {
+                        hostTreeProvider()?.showContextmenuForHost(host, this@HostCard, e.x, e.y)
+                    }
                 }
             })
+        }
+
+        fun startLoading() {
+            loading = true
+            loadingProgress = 0f
+            loadingTimer?.stop()
+            // 33ms = ~30fps instead of 16ms = 60fps to reduce EDT pressure
+            loadingTimer = Timer(33, null).apply {
+                addActionListener {
+                    loadingProgress += 0.03f
+                    if (loadingProgress >= 1f) loadingProgress = 0f
+                    repaint()
+                }
+                isRepeats = true
+                start()
+            }
+        }
+
+        fun stopLoading() {
+            loading = false
+            loadingTimer?.stop()
+            loadingTimer = null
+            repaint()
+        }
+
+        override fun paintComponent(g: Graphics) {
+            super.paintComponent(g)
+            if (!loading) return
+
+            val g2 = g.create() as Graphics2D
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                val arc = 14
+
+                // Pulsing accent border
+                val accent = UIManager.getColor("Component.accentColor")
+                    ?: UIManager.getColor("List.selectionBackground")
+                    ?: Color(100, 149, 237)
+                val pulse = (kotlin.math.sin(loadingProgress.toDouble() * kotlin.math.PI * 2) * 0.5 + 0.5).coerceIn(0.0, 1.0).toFloat()
+                val borderAlpha = (60 + pulse * 120).toInt().coerceIn(60, 180)
+                g2.color = Color(accent.red, accent.green, accent.blue, borderAlpha)
+                g2.stroke = BasicStroke(2f)
+                g2.drawRoundRect(1, 1, width - 3, height - 4, arc, arc)
+
+                // Loading dots at bottom right
+                val dotSize = 4
+                val dotSpacing = 8
+                val dotsX = width - 30
+                val dotsY = height - 14
+                for (i in 0 until 3) {
+                    val phase = (loadingProgress + i * 0.33f) % 1f
+                    val dotAlpha = (kotlin.math.sin(phase.toDouble() * kotlin.math.PI) * 200).toInt().coerceIn(30, 200)
+                    g2.color = Color(accent.red, accent.green, accent.blue, dotAlpha)
+                    g2.fillOval(dotsX + i * dotSpacing, dotsY, dotSize, dotSize)
+                }
+            } finally {
+                g2.dispose()
+            }
         }
 
         private fun subtitleOf(host: Host): String {
@@ -345,6 +479,17 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
                 else -> host.host
             }
         }
+
+        private fun extraInfoOf(host: Host): String {
+            return when {
+                StringUtils.equalsIgnoreCase(host.protocol, SSHProtocolProvider.PROTOCOL) -> {
+                    val port = if (host.port > 0) host.port else 22
+                    "SSH • ${host.host}:$port"
+                }
+                host.protocol == "Serial" -> "Serial • ${host.options.serialComm.baudRate} baud"
+                else -> host.protocol
+            }
+        }
     }
 
     /**
@@ -353,18 +498,20 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
     private inner class AddCard : RoundedCard() {
         init {
             layout = BorderLayout(8, 0)
+            isFocusable = false
 
             val icon = (if (FlatLaf.isLafDark()) Icons.add.dark else Icons.add).derive(iconSize, iconSize)
             val iconLabel = JLabel(icon)
             iconLabel.verticalAlignment = SwingConstants.CENTER
             add(iconLabel, BorderLayout.WEST)
 
+            val nameFontSize = (cardHeight * 0.22f).coerceIn(12f, 16f)
             val nameLabel = JLabel(I18n.getString("termora.welcome.new-host"))
-            nameLabel.font = nameLabel.font.deriveFont(Font.BOLD)
+            nameLabel.font = nameLabel.font.deriveFont(Font.BOLD, nameFontSize)
             add(nameLabel, BorderLayout.CENTER)
 
             addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent) {
+                override fun mousePressed(e: MouseEvent) {
                     if (SwingUtilities.isLeftMouseButton(e)) {
                         actionManager.getAction(NewHostAction.NEW_HOST)
                             ?.actionPerformed(
@@ -379,21 +526,32 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
             val g2 = g.create() as Graphics2D
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val arc = UIManager.getInt("Component.arc").coerceAtLeast(10)
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+                val arc = 14
 
-                // Полупрозрачный accent-фон
                 val accent = UIManager.getColor("Component.accentColor")
                     ?: UIManager.getColor("List.selectionInactiveBackground")
                     ?: UIManager.getColor("Component.background")
                     ?: background
-                val bgAlpha = if (hoverAlpha > 128f) 30 else 12
-                g2.color = Color(accent.red, accent.green, accent.blue, bgAlpha)
-                g2.fillRoundRect(0, 0, width - 1, height - 1, arc, arc)
+                val alpha = (hoverAlpha / 255f).coerceIn(0f, 1f)
 
-                // Пунктирная рамка
-                val stroke = BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0f, floatArrayOf(5f, 4f), 0f)
+                // Shadow on hover
+                if (alpha > 0.01f) {
+                    val s = (alpha * 15).toInt().coerceIn(0, 15)
+                    g2.color = Color(accent.red, accent.green, accent.blue, s)
+                    g2.fillRoundRect(0, 2, width - 1, height - 1, arc, arc)
+                }
+
+                // Accent background - glass-like, intensifies on hover
+                val bgAlpha = (10 + alpha * 22).toInt().coerceIn(10, 32)
+                g2.color = Color(accent.red, accent.green, accent.blue, bgAlpha)
+                g2.fillRoundRect(0, 0, width - 1, height - 2, arc, arc)
+
+                // Dashed border - smooth, Apple-style
+                val strokeWidth = 1.0f + alpha * 0.5f
+                val stroke = BasicStroke(strokeWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0f, floatArrayOf(6f, 4f), 0f)
                 g2.stroke = stroke
-                g2.color = accent
+                g2.color = Color(accent.red, accent.green, accent.blue, (140 + alpha * 115).toInt().coerceIn(140, 255))
                 g2.drawRoundRect(1, 1, width - 3, height - 3, arc, arc)
             } finally {
                 g2.dispose()

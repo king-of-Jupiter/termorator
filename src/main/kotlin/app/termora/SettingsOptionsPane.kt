@@ -11,6 +11,7 @@ import app.termora.terminal.DataKey
 import app.termora.terminal.panel.FloatingToolbarPanel
 import app.termora.terminal.panel.TerminalPanel
 import com.formdev.flatlaf.FlatClientProperties
+import com.formdev.flatlaf.FlatLaf
 import com.formdev.flatlaf.extras.components.FlatComboBox
 import com.formdev.flatlaf.extras.components.FlatPopupMenu
 import com.formdev.flatlaf.extras.components.FlatToolBar
@@ -363,12 +364,12 @@ class SettingsOptionsPane : OptionsPane() {
 
         private fun getFormPanel(): JPanel {
             val layout = FormLayout(
-                "left:pref, $FORM_MARGIN, default:grow, $FORM_MARGIN, default, default:grow",
-                "pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref"
+                "left:pref, ${FORM_MARGIN}, default:grow, ${FORM_MARGIN}, default, default:grow",
+                "pref, ${FORM_MARGIN}, pref, ${FORM_MARGIN}, pref, ${FORM_MARGIN}, pref, ${FORM_MARGIN}, pref, ${FORM_MARGIN}, pref, ${FORM_MARGIN}, pref"
             )
             val box = FlatToolBar()
             box.add(followSystemCheckBox)
-            box.add(Box.createHorizontalStrut(2))
+            box.add(Box.createHorizontalStrut(4))
             box.add(preferredThemeBtn)
 
             var rows = 1
@@ -384,7 +385,6 @@ class SettingsOptionsPane : OptionsPane() {
                         Application.browse(URI.create("https://github.com/TermoraDev/termora/tree/main/src/main/resources/i18n"))
                     }
                 })).xy(5, rows).apply { rows += step }
-
 
             builder.add("${I18n.getString("termora.settings.appearance.layout")}:").xy(1, rows)
                 .add(layoutComboBox).xy(3, rows).apply { rows += step }
@@ -705,8 +705,8 @@ class SettingsOptionsPane : OptionsPane() {
 
         private fun p(): JPanel {
             val layout = FormLayout(
-                "left:pref, $FORM_MARGIN, default:grow",
-                "pref, 20dlu, pref, 4dlu, pref, 4dlu, pref, 4dlu, pref, 4dlu, pref"
+                "left:pref, ${FORM_MARGIN}, default:grow",
+                "pref, 24dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref"
             )
 
 
@@ -715,7 +715,7 @@ class SettingsOptionsPane : OptionsPane() {
 
             val branch = if (Application.isUnknownVersion()) "main" else Application.getVersion()
 
-            val builder = FormBuilder.create().padding("$FORM_MARGIN, $FORM_MARGIN, $FORM_MARGIN, $FORM_MARGIN")
+            val builder = FormBuilder.create().padding("${FORM_MARGIN}, ${FORM_MARGIN}, ${FORM_MARGIN}, ${FORM_MARGIN}")
                 .layout(layout).debug(false)
                 .add(I18n.getString("termora.settings.about.termora", Application.getVersion()))
                 .xyw(1, rows, 3, "center, fill").apply { rows += step }

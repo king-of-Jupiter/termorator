@@ -56,6 +56,9 @@ internal class MyTabbedPane : FlatTabbedPane(), Disposable {
         styleMap = mapOf(
             "focusColor" to DynamicColor("TabbedPane.background"),
             "hoverColor" to DynamicColor("TabbedPane.background"),
+            "underlineColor" to (UIManager.getColor("Component.accentColor")
+                ?: UIManager.getColor("List.selectionBackground")
+                ?: DynamicColor("TabbedPane.background")),
         )
 
         initEvents()

@@ -3,6 +3,7 @@ package app.termora.findeverywhere
 import com.formdev.flatlaf.ui.FlatListUI
 import org.jdesktop.swingx.JXList
 import java.awt.*
+import java.awt.Color
 import java.awt.event.MouseEvent
 import javax.swing.*
 
@@ -34,17 +35,34 @@ class FindEverywhereXList(private val model: DefaultListModel<FindEverywhereResu
     }
 
     private fun paintEmptyText(g: Graphics) {
-        if (g is Graphics2D) {
-            g.setRenderingHints(
-                RenderingHints(
-                    RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-                )
+        if (g !is Graphics2D) return
+        g.setRenderingHints(
+            RenderingHints(
+                RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON
             )
-        }
+        )
+
+        // Draw search icon
+        val iconSize = 32
+        val iconX = width / 2 - iconSize / 2
+        val iconY = (height * 0.2).toInt() - iconSize / 2
+        val accent = UIManager.getColor("Component.accentColor")
+            ?: UIManager.getColor("List.selectionBackground")
+            ?: UIManager.getColor("textInactiveText")
+        g.color = Color(accent.red, accent.green, accent.blue, 80)
+        g.fillOval(iconX, iconY, iconSize, iconSize)
+        g.color = Color(accent.red, accent.green, accent.blue, 160)
+        g.font = g.font.deriveFont(18f)
+        val iconText = "?"
+        val iconTextW = g.fontMetrics.stringWidth(iconText)
+        g.drawString(iconText, width / 2 - iconTextW / 2, iconY + iconSize / 2 + 6)
+
+        // Draw text below
         g.color = UIManager.getColor("textInactiveText")
+        g.font = g.font.deriveFont(g.font.size - 1f)
         val text = app.termora.I18n.getString("termora.find-everywhere.nothing-found")
         val w = g.fontMetrics.stringWidth(text)
-        g.drawString(text, width / 2 - w / 2, (height * 0.25).toInt())
+        g.drawString(text, width / 2 - w / 2, iconY + iconSize + 20)
     }
 
     private fun isGroup(e: Point): Boolean {

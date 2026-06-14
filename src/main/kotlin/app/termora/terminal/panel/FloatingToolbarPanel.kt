@@ -18,6 +18,7 @@ import java.awt.event.ActionListener
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.util.*
+import javax.swing.BorderFactory
 import javax.swing.JButton
 import javax.swing.SwingUtilities
 
@@ -66,7 +67,10 @@ class FloatingToolbarPanel : FlatToolBar(), Disposable {
     }
 
     init {
-        border = FlatRoundBorder()
+        border = BorderFactory.createCompoundBorder(
+            FlatRoundBorder(),
+            BorderFactory.createEmptyBorder(2, 4, 2, 4)
+        )
         isFocusable = false
         isFloatable = false
         isVisible = false
@@ -82,7 +86,10 @@ class FloatingToolbarPanel : FlatToolBar(), Disposable {
 
     override fun updateUI() {
         super.updateUI()
-        border = FlatRoundBorder()
+        border = BorderFactory.createCompoundBorder(
+            FlatRoundBorder(),
+            BorderFactory.createEmptyBorder(2, 4, 2, 4)
+        )
     }
 
     fun triggerShow() {

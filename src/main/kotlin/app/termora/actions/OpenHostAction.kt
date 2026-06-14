@@ -3,6 +3,10 @@ package app.termora.actions
 import app.termora.*
 import app.termora.protocol.GenericProtocolProvider
 import app.termora.protocol.ProtocolProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.withContext
 import org.apache.commons.lang3.StringUtils
 import javax.swing.JOptionPane
 
@@ -21,7 +25,6 @@ class OpenHostAction : AnAction() {
         val windowScope = evt.getData(DataProviders.WindowScope) ?: return
         val host = evt.host
 
-        var tab: TerminalTab? = null
         var providers = ProtocolProvider.providers
 
         if (providers.none { StringUtils.equalsIgnoreCase(it.getProtocol(), host.protocol) }) {
@@ -36,27 +39,34 @@ class OpenHostAction : AnAction() {
         // 只处理通用协议
         providers = providers.filterIsInstance<GenericProtocolProvider>()
 
-        for (provider in providers) {
-            if (StringUtils.equalsIgnoreCase(provider.getProtocol(), host.protocol)) {
-                if (provider.canCreateTerminalTab(evt, windowScope, host)) {
-                    tab = provider.createTerminalTab(evt, windowScope, host)
+        var provider: GenericProtocolProvider? = null
+        for (p in providers) {
+            if (StringUtils.equalsIgnoreCase(p.getProtocol(), host.protocol)) {
+                if (p.canCreateTerminalTab(evt, windowScope, host)) {
+                    provider = p
                     break
                 }
             }
         }
 
-        if (tab == null) return
+        if (provider == null) return
 
-        if (evt.tabIndex >= 0) {
-            terminalTabbedManager.addTerminalTab(evt.tabIndex, tab)
-        } else {
-            terminalTabbedManager.addTerminalTab(tab)
+        // Launch tab creation in background to avoid blocking EDT
+        swingCoroutineScope.launch(Dispatchers.IO) {
+            val tab = provider.createTerminalTab(evt, windowScope, host)
+
+            withContext(Dispatchers.Swing) {
+                if (evt.tabIndex >= 0) {
+                    terminalTabbedManager.addTerminalTab(evt.tabIndex, tab, evt.selected)
+                } else {
+                    terminalTabbedManager.addTerminalTab(tab, evt.selected)
+                }
+
+                if (tab is PtyHostTerminalTab) {
+                    tab.start()
+                }
+            }
         }
-
-        if (tab is PtyHostTerminalTab) {
-            tab.start()
-        }
-
     }
 
 

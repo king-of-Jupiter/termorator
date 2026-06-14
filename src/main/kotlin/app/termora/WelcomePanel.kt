@@ -80,15 +80,21 @@ class WelcomePanel(
             (UIManager.getInt("TitleBar.height") * 0.85).toInt()
         )
 
-        // Focus glow: accent bottom border when search field is focused
-        val unfocusedBorder = BorderFactory.createMatteBorder(0, 0, 1, 0, DynamicColor.BorderColor)
+        // Focus glow: accent bottom border with subtle glow
+        val unfocusedBorder = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DynamicColor.BorderColor),
+            BorderFactory.createEmptyBorder(0, 0, 2, 0)
+        )
         searchTextField.border = unfocusedBorder
         searchTextField.addFocusListener(object : FocusAdapter() {
             override fun focusGained(e: FocusEvent) {
                 val accent = UIManager.getColor("Component.accentColor")
                     ?: UIManager.getColor("List.selectionBackground")
                     ?: DynamicColor.BorderColor
-                searchTextField.border = BorderFactory.createMatteBorder(0, 0, 2, 0, accent)
+                searchTextField.border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 2, 0, accent),
+                    BorderFactory.createEmptyBorder(0, 0, 1, 0)
+                )
             }
 
             override fun focusLost(e: FocusEvent) {
@@ -145,17 +151,17 @@ class WelcomePanel(
 
         val box = Box.createHorizontalBox()
         box.add(searchTextField)
-        box.add(Box.createHorizontalStrut(4))
+        box.add(Box.createHorizontalStrut(6))
         box.add(newHost)
         if (embedTree) {
-            box.add(Box.createHorizontalStrut(4))
+            box.add(Box.createHorizontalStrut(6))
             box.add(viewToggle)
         }
-        box.add(Box.createHorizontalStrut(4))
+        box.add(Box.createHorizontalStrut(6))
         box.add(toggle)
 
         if (!fullContent) {
-            box.border = BorderFactory.createEmptyBorder(20, 0, 0, 0)
+            box.border = BorderFactory.createEmptyBorder(24, 0, 0, 0)
         }
 
         toggle.addActionListener {

@@ -109,9 +109,9 @@ dependencies {
     api(libs.jnafilechooser)
 
     api(libs.colorpicker)
-    api(libs.mixpanel)
     api(libs.ini4j)
     api(libs.restart4j)
+    api(libs.jSerialComm)
     api(libs.exposed.core)
     api(libs.exposed.crypt)
     api(libs.exposed.jdbc)

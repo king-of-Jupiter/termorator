@@ -36,7 +36,6 @@ colorpicker = "2.0.1"
 rhino = "1.9.0"
 delight-rhino-sandbox = "0.2.1"
 testcontainers = "2.0.4"
-mixpanel = "1.8.0"
 jSerialComm = "2.11.4"
 ini4j = "0.5.5-2"
 restart4j = "0.0.1"
@@ -100,7 +99,6 @@ bip39 = { module = "cash.z.ecc.android:kotlin-bip39", version.ref = "bip39" }
 rhino = { module = "org.mozilla:rhino", version.ref = "rhino" }
 delight-rhino-sandbox = { module = "org.javadelight:delight-rhino-sandbox", version.ref = "delight-rhino-sandbox" }
 colorpicker = { module = "org.drjekyll:colorpicker", version.ref = "colorpicker" }
-mixpanel = { module = "com.mixpanel:mixpanel-java", version.ref = "mixpanel" }
 jSerialComm = { module = "com.fazecast:jSerialComm", version.ref = "jSerialComm" }
 eddsa = { module = "net.i2p.crypto:eddsa", version.ref = "eddsa" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
