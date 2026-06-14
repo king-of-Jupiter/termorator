@@ -18,6 +18,7 @@ import java.awt.event.ComponentEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
+import javax.swing.Timer
 
 /**
  * Termius 风格的主机卡片视图：把所有服务器以较大的卡片形式按文件夹分组展示，
@@ -39,6 +40,10 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
     private val iconSize = 30
 
     private var filterText: String = StringUtils.EMPTY
+
+    companion object {
+        private const val ANIM_DURATION = 120f // мс, длительность hover-анимации
+    }
 
     init {
         initView()
@@ -161,7 +166,8 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
     }
 
     private fun addGroup(title: String, hosts: List<Host>, includeAddCard: Boolean, row: IntArray) {
-        val header = JLabel(title)
+        val headerText = if (hosts.isNotEmpty()) "$title  (${hosts.size})" else title
+        val header = JLabel(headerText)
         header.font = header.font.deriveFont(Font.BOLD)
         header.foreground = DynamicColor("textInactiveText")
         header.border = BorderFactory.createEmptyBorder(if (row[0] == 0) 6 else 18, 6, 6, 6)
@@ -191,10 +197,22 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
     }
 
     /**
-     * 圆角卡片基类，封装悬停背景与圆角绘制
+     * Карточка с плавной hover-анимацией и pressed-эффектом.
      */
     private abstract inner class RoundedCard : JPanel() {
-        protected var hover = false
+        protected var hoverAlpha = 0f // 0..255
+        protected var pressed = false
+        private var hoverTarget = false
+        private var animStart = 0L
+        private var animTimer: Timer? = null
+
+        private val normalBg: Color
+            get() = UIManager.getColor("TextField.background") ?: background
+
+        private val hoverBg: Color
+            get() = UIManager.getColor("List.selectionInactiveBackground")
+                ?: UIManager.getColor("Component.background")
+                ?: background
 
         init {
             isOpaque = false
@@ -204,13 +222,45 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
             maximumSize = preferredSize
             addMouseListener(object : MouseAdapter() {
                 override fun mouseEntered(e: MouseEvent) {
-                    hover = true; repaint()
+                    startHover(true)
                 }
 
                 override fun mouseExited(e: MouseEvent) {
-                    hover = false; repaint()
+                    pressed = false
+                    startHover(false)
+                }
+
+                override fun mousePressed(e: MouseEvent) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        pressed = true; repaint()
+                    }
+                }
+
+                override fun mouseReleased(e: MouseEvent) {
+                    pressed = false; repaint()
                 }
             })
+        }
+
+        private fun startHover(target: Boolean) {
+            hoverTarget = target
+            animStart = System.nanoTime()
+            animTimer?.stop()
+            animTimer = Timer(16, null).apply {
+                addActionListener {
+                    val elapsed = (System.nanoTime() - animStart) / 1_000_000f
+                    val progress = (elapsed / ANIM_DURATION).coerceIn(0f, 1f)
+                    val eased = 1f - (1f - progress) * (1f - progress) // ease-out
+                    hoverAlpha = if (hoverTarget) eased * 255f else (1f - eased) * 255f
+                    if (progress >= 1f) {
+                        hoverAlpha = if (hoverTarget) 255f else 0f
+                        stop()
+                    }
+                    repaint()
+                }
+                isRepeats = true
+                start()
+            }
         }
 
         override fun paintComponent(g: Graphics) {
@@ -218,11 +268,12 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
             try {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                 val arc = UIManager.getInt("Component.arc").coerceAtLeast(10)
-                val bg = if (hover)
-                    UIManager.getColor("List.selectionInactiveBackground") ?: UIManager.getColor("Component.background")
-                else
-                    UIManager.getColor("TextField.background") ?: background
-                g2.color = bg
+
+                val alpha = (hoverAlpha / 255f).coerceIn(0f, 1f)
+                val bg = if (alpha > 0.01f) blend(normalBg, hoverBg, alpha) else normalBg
+                val finalBg = if (pressed) bg.darker() else bg
+
+                g2.color = finalBg
                 g2.fillRoundRect(0, 0, width - 1, height - 1, arc, arc)
                 g2.color = DynamicColor.BorderColor
                 g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
@@ -230,6 +281,13 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
                 g2.dispose()
             }
             super.paintComponent(g)
+        }
+
+        private fun blend(c1: Color, c2: Color, t: Float): Color {
+            val r = (c1.red + (c2.red - c1.red) * t).toInt().coerceIn(0, 255)
+            val g = (c1.green + (c2.green - c1.green) * t).toInt().coerceIn(0, 255)
+            val b = (c1.blue + (c2.blue - c1.blue) * t).toInt().coerceIn(0, 255)
+            return Color(r, g, b)
         }
     }
 
@@ -249,9 +307,10 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
 
             val subtitle = subtitleOf(host)
             if (subtitle.isNotBlank()) {
-                box.add(Box.createVerticalStrut(4))
+                box.add(Box.createVerticalStrut(2))
                 val subLabel = JLabel(subtitle)
                 subLabel.foreground = DynamicColor("textInactiveText")
+                subLabel.font = subLabel.font.deriveFont(subLabel.font.size - 1.5f)
                 subLabel.alignmentX = LEFT_ALIGNMENT
                 box.add(subLabel)
             }
@@ -288,6 +347,9 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
         }
     }
 
+    /**
+     * Карточка «Новый хост» — с пунктирной рамкой и accent-цветом.
+     */
     private inner class AddCard : RoundedCard() {
         init {
             layout = BorderLayout(8, 0)
@@ -311,6 +373,32 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
                     }
                 }
             })
+        }
+
+        override fun paintComponent(g: Graphics) {
+            val g2 = g.create() as Graphics2D
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                val arc = UIManager.getInt("Component.arc").coerceAtLeast(10)
+
+                // Полупрозрачный accent-фон
+                val accent = UIManager.getColor("Component.accentColor")
+                    ?: UIManager.getColor("List.selectionInactiveBackground")
+                    ?: UIManager.getColor("Component.background")
+                    ?: background
+                val bgAlpha = if (hoverAlpha > 128f) 30 else 12
+                g2.color = Color(accent.red, accent.green, accent.blue, bgAlpha)
+                g2.fillRoundRect(0, 0, width - 1, height - 1, arc, arc)
+
+                // Пунктирная рамка
+                val stroke = BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 0f, floatArrayOf(5f, 4f), 0f)
+                g2.stroke = stroke
+                g2.color = accent
+                g2.drawRoundRect(1, 1, width - 3, height - 3, arc, arc)
+            } finally {
+                g2.dispose()
+            }
+            super.paintComponent(g)
         }
     }
 }

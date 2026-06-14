@@ -80,6 +80,21 @@ class WelcomePanel(
             (UIManager.getInt("TitleBar.height") * 0.85).toInt()
         )
 
+        // Focus glow: accent bottom border when search field is focused
+        val unfocusedBorder = BorderFactory.createMatteBorder(0, 0, 1, 0, DynamicColor.BorderColor)
+        searchTextField.border = unfocusedBorder
+        searchTextField.addFocusListener(object : FocusAdapter() {
+            override fun focusGained(e: FocusEvent) {
+                val accent = UIManager.getColor("Component.accentColor")
+                    ?: UIManager.getColor("List.selectionBackground")
+                    ?: DynamicColor.BorderColor
+                searchTextField.border = BorderFactory.createMatteBorder(0, 0, 2, 0, accent)
+            }
+
+            override fun focusLost(e: FocusEvent) {
+                searchTextField.border = unfocusedBorder
+            }
+        })
 
         val iconSize = (searchTextField.preferredSize.height * 0.65).toInt()
 
@@ -118,12 +133,15 @@ class WelcomePanel(
 
 
         toggle.icon = FlatSVGIcon(
-            if (fullContent) Icons.collapseAll.name else Icons.collapseAll.name,
+            if (fullContent) Icons.collapseAll.name else Icons.expandAll.name,
             iconSize,
             iconSize
         )
         toggle.isFocusable = false
         toggle.buttonType = FlatButton.ButtonType.toolBarButton
+        toggle.toolTipText = I18n.getString(
+            if (fullContent) "termora.welcome.collapse" else "termora.welcome.expand"
+        )
 
         val box = Box.createHorizontalBox()
         box.add(searchTextField)
@@ -143,9 +161,12 @@ class WelcomePanel(
         toggle.addActionListener {
             fullContent = !fullContent
             toggle.icon = FlatSVGIcon(
-                if (fullContent) Icons.collapseAll.name else Icons.collapseAll.name,
+                if (fullContent) Icons.collapseAll.name else Icons.expandAll.name,
                 iconSize,
                 iconSize
+            )
+            toggle.toolTipText = I18n.getString(
+                if (fullContent) "termora.welcome.collapse" else "termora.welcome.expand"
             )
             if (fullContent) {
                 box.border = BorderFactory.createEmptyBorder()

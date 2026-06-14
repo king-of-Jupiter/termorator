@@ -59,6 +59,9 @@ abstract class OptionsPane : JPanel(BorderLayout()), Disposable {
                     }
                 }
 
+                // Больше отступов для читаемости
+                border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
+
                 return c
             }
         }
