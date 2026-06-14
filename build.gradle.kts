@@ -412,7 +412,6 @@ tasks.register<Exec>("jpackage") {
     arguments.addAll(listOf("--java-options", options.joinToString(StringUtils.SPACE)))
     arguments.addAll(listOf("--vendor", "TermoraDev"))
     arguments.addAll(listOf("--copyright", "TermoraDev"))
-    arguments.addAll(listOf("--app-content", "$buildDir/plugins"))
 
     if (os.isMacOsX) {
         arguments.addAll(listOf("--mac-package-name", project.name.uppercaseFirstChar()))
