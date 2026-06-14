@@ -9,7 +9,7 @@ import java.awt.Window
 import javax.swing.JComponent
 import javax.swing.UIManager
 
-class SnippetDialog(owner: Window) : DialogWrapper(owner) {
+class SnippetDialog(owner: Window, private val selectSnippetId: String? = null) : DialogWrapper(owner) {
     private val properties get() = DatabaseManager.getInstance().properties
 
     init {
@@ -31,7 +31,7 @@ class SnippetDialog(owner: Window) : DialogWrapper(owner) {
     }
 
     override fun createCenterPanel(): JComponent {
-        return SnippetPanel().apply { Disposer.register(disposable, this) }
+        return SnippetPanel(selectSnippetId).apply { Disposer.register(disposable, this) }
     }
 
     override fun createSouthPanel(): JComponent? {

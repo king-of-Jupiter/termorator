@@ -67,7 +67,7 @@ abstract class GitSyncer : SafetySyncer() {
         }
 
         // decode keymaps
-        if (config.ranges.contains(SyncRange.Macros)) {
+        if (config.ranges.contains(SyncRange.Keymap)) {
             gistResponse.gists.findLast { it.filename == "Keymaps" }?.let {
                 decodeKeymaps(it.content, deletedData.filter { e -> e.type == "Keymap" }, config)
             }
@@ -107,7 +107,7 @@ abstract class GitSyncer : SafetySyncer() {
             }
             gistFiles.add(GistFile("Hosts", hostsContent))
 
-            val tagsContent = encodeHosts(key)
+            val tagsContent = encodeTags(key)
             if (log.isDebugEnabled) {
                 log.debug("Push encryptedTags: {}", tagsContent)
             }

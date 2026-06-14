@@ -23,7 +23,7 @@ import javax.swing.event.DocumentEvent
 import javax.swing.undo.UndoManager
 
 
-class SnippetPanel : JPanel(BorderLayout()), Disposable {
+class SnippetPanel(private val selectSnippetId: String? = null) : JPanel(BorderLayout()), Disposable {
     companion object {
         private val log = LoggerFactory.getLogger(SnippetPanel::class.java)
         private val properties get() = DatabaseManager.getInstance().properties
@@ -91,6 +91,20 @@ class SnippetPanel : JPanel(BorderLayout()), Disposable {
         }
 
         SwingUtilities.invokeLater {
+            // Try to select the specific snippet if provided
+            if (selectSnippetId != null) {
+                val targetNode = snippetTree.simpleTreeModel.getRoot()
+                    .getAllChildren()
+                    .firstOrNull { it.data.id == selectSnippetId }
+                if (targetNode != null) {
+                    snippetTree.selectionPath = javax.swing.tree.TreePath(
+                        snippetTree.simpleTreeModel.getPathToRoot(targetNode)
+                    )
+                    snippetTree.requestFocusInWindow()
+                    return@invokeLater
+                }
+            }
+
             if (snippetTree.selectionRows?.isEmpty() == true) {
                 snippetTree.addSelectionRow(0)
             }

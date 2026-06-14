@@ -205,6 +205,8 @@ class CloudSyncOption : JPanel(BorderLayout()), OptionsPane.PluginOption {
         hostsCheckBox.addActionListener { refreshButtons() }
         snippetsCheckBox.addActionListener { refreshButtons() }
         keywordHighlightsCheckBox.addActionListener { refreshButtons() }
+        macrosCheckBox.addActionListener { refreshButtons() }
+        keymapCheckBox.addActionListener { refreshButtons() }
 
     }
 
@@ -237,9 +239,12 @@ class CloudSyncOption : JPanel(BorderLayout()), OptionsPane.PluginOption {
         sync.rangeHosts = hostsCheckBox.isSelected
         sync.rangeSnippets = snippetsCheckBox.isSelected
         sync.rangeKeywordHighlights = keywordHighlightsCheckBox.isSelected
+        sync.rangeMacros = macrosCheckBox.isSelected
+        sync.rangeKeymap = keymapCheckBox.isSelected
 
-        syncConfigButton.isEnabled = keysCheckBox.isSelected || hostsCheckBox.isSelected
-                || keywordHighlightsCheckBox.isSelected
+        syncConfigButton.isEnabled = hostsCheckBox.isSelected || keysCheckBox.isSelected
+                || keywordHighlightsCheckBox.isSelected || snippetsCheckBox.isSelected
+                || macrosCheckBox.isSelected || keymapCheckBox.isSelected
     }
 
     private fun getSyncConfig(): SyncConfig {

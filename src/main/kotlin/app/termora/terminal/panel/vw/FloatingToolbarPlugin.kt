@@ -7,10 +7,8 @@ import app.termora.terminal.panel.vw.extensions.*
 
 internal class FloatingToolbarPlugin : InternalPlugin() {
     init {
-        support.addExtension(FloatingToolbarActionExtension::class.java) { TransferVisualWindowActionExtension.instance }
         support.addExtension(FloatingToolbarActionExtension::class.java) { ServerInfoVisualWindowActionExtension.instance }
         support.addExtension(FloatingToolbarActionExtension::class.java) { SnippetVisualWindowActionExtension.instance }
-        support.addExtension(FloatingToolbarActionExtension::class.java) { NvidiaVisualWindowActionExtension.instance }
         support.addExtension(FloatingToolbarActionExtension::class.java) { HistoryCommandVisualWindowActionExtension.instance }
     }
 

@@ -63,6 +63,15 @@ class TermoraFencePanel(
         toolbar.isVisible = false
 
         add(mySplitPane, BorderLayout.CENTER)
+
+        // 起始页（卡片视图）作为不可关闭的「主页」标签；树仍在左侧边栏提供
+        // 卡片右键复用侧边栏主机树的上下文菜单
+        val welcomePanel = WelcomePanel(
+            embedTree = false,
+            externalHostTreeProvider = { leftTreePanel.hostTree }
+        )
+        terminalTabbed.addTerminalTab(welcomePanel, true)
+        Disposer.register(this, welcomePanel)
     }
 
     private fun initEvents() {

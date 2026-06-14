@@ -12,21 +12,32 @@ import com.formdev.flatlaf.extras.components.FlatButton
 import org.apache.commons.lang3.StringUtils
 import org.jdesktop.swingx.action.ActionManager
 import java.awt.BorderLayout
+import java.awt.CardLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.KeyboardFocusManager
 import java.awt.event.*
 import javax.swing.*
+import javax.swing.event.DocumentEvent
 import kotlin.math.max
 
-class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProvider {
+class WelcomePanel(
+    private val embedTree: Boolean = true,
+    private val externalHostTreeProvider: (() -> NewHostTree?)? = null,
+) : JPanel(BorderLayout()), Disposable, TerminalTab, DataProvider {
 
     private val properties get() = DatabaseManager.getInstance().properties
     private val rootPanel = JPanel(BorderLayout())
     private val hostTree = NewHostTree()
+    private val hostCardsPanel = HostCardsPanel(
+        hostTreeProvider = { if (embedTree) hostTree else externalHostTreeProvider?.invoke() }
+    )
+    private val centerCardLayout = CardLayout()
+    private val centerPanel = JPanel(centerCardLayout)
     private val bannerPanel = BannerPanel()
     private val toggle = FlatButton()
     private var fullContent = properties.getString("WelcomeFullContent", "false").toBoolean()
+    private var viewMode = if (embedTree) properties.getString("WelcomeViewMode", "cards") else "cards"
     private val dataProviderSupport = DataProviderSupport()
     private val hostTreeModel = hostTree.model as NewHostTreeModel
     private val filterableTreeModel = FilterableTreeModel(hostTree).apply { expand = true }
@@ -55,7 +66,10 @@ class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProv
         rootPanel.add(panel, BorderLayout.CENTER)
         add(rootPanel, BorderLayout.CENTER)
 
-        dataProviderSupport.addData(DataProviders.Welcome.HostTree, hostTree)
+        // 在 Fence 布局中，主机树由侧边栏提供，这里不再注册，避免覆盖
+        if (embedTree) {
+            dataProviderSupport.addData(DataProviders.Welcome.HostTree, hostTree)
+        }
 
     }
 
@@ -81,6 +95,27 @@ class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProv
             ActionManager.getInstance().getAction(NewHostAction.NEW_HOST)?.actionPerformed(e)
         }
 
+        // 卡片 / 列表 视图切换（仅 Screen 布局内嵌树时显示）
+        val viewToggle = FlatButton()
+        viewToggle.isFocusable = false
+        viewToggle.buttonType = FlatButton.ButtonType.toolBarButton
+        fun refreshViewToggleIcon() {
+            viewToggle.icon = FlatSVGIcon(
+                (if (viewMode == "cards") Icons.listFiles else Icons.homeFolder).name,
+                iconSize, iconSize
+            )
+            viewToggle.toolTipText = I18n.getString(
+                if (viewMode == "cards") "termora.welcome.view.list" else "termora.welcome.view.cards"
+            )
+        }
+        refreshViewToggleIcon()
+        viewToggle.addActionListener {
+            viewMode = if (viewMode == "cards") "tree" else "cards"
+            centerCardLayout.show(centerPanel, viewMode)
+            refreshViewToggleIcon()
+            perform()
+        }
+
 
         toggle.icon = FlatSVGIcon(
             if (fullContent) Icons.collapseAll.name else Icons.collapseAll.name,
@@ -94,6 +129,10 @@ class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProv
         box.add(searchTextField)
         box.add(Box.createHorizontalStrut(4))
         box.add(newHost)
+        if (embedTree) {
+            box.add(Box.createHorizontalStrut(4))
+            box.add(viewToggle)
+        }
         box.add(Box.createHorizontalStrut(4))
         box.add(toggle)
 
@@ -142,14 +181,29 @@ class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProv
         hostTree.name = "WelcomeHostTree"
         hostTree.restoreExpansions()
 
-        return panel
+        // 卡片视图为默认；树视图仅在内嵌树时可切换
+        centerPanel.add(hostCardsPanel, "cards")
+        if (embedTree) {
+            centerPanel.add(panel, "tree")
+        }
+        centerCardLayout.show(centerPanel, if (embedTree) viewMode else "cards")
+
+        return centerPanel
     }
 
 
     private fun initEvents() {
 
         Disposer.register(this, hostTree)
+        Disposer.register(this, hostCardsPanel)
         Disposer.register(hostTree, filterableTreeModel)
+
+        // 搜索框同时过滤卡片视图
+        searchTextField.document.addDocumentListener(object : DocumentAdaptor() {
+            override fun changedUpdate(e: DocumentEvent) {
+                hostCardsPanel.filter(searchTextField.text)
+            }
+        })
 
         addComponentListener(object : ComponentAdapter() {
             override fun componentShown(e: ComponentEvent) {
@@ -214,7 +268,9 @@ class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProv
             rootPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
         } else {
             val top = max((height * 0.08).toInt(), 30)
-            val left = max((width * 0.25).toInt(), 30)
+            // 卡片视图占用更宽的横向空间，让每行能容纳更多卡片
+            val left = if (viewMode == "cards") max((width * 0.04).toInt(), 24)
+            else max((width * 0.25).toInt(), 30)
             rootPanel.add(bannerPanel, BorderLayout.NORTH)
             rootPanel.border = BorderFactory.createEmptyBorder(top, left, top / 2, left)
             SwingUtilities.invokeLater {
@@ -259,6 +315,9 @@ class WelcomePanel() : JPanel(BorderLayout()), Disposable, TerminalTab, DataProv
 
     override fun dispose() {
         properties.putString("WelcomeFullContent", fullContent.toString())
+        if (embedTree) {
+            properties.putString("WelcomeViewMode", viewMode)
+        }
     }
 
     override fun <T : Any> getData(dataKey: DataKey<T>): T? {

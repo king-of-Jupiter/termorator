@@ -31,9 +31,9 @@ internal class TermoraToolbarModel private constructor() {
     fun getAllActions(): List<ToolBarAction> {
         return listOf(
             ToolBarAction(SnippetAction.SNIPPET, true),
-            ToolBarAction(Actions.SFTP, true),
-            ToolBarAction(Actions.TERMINAL_LOGGER, true),
-            ToolBarAction(Actions.MACRO, true),
+            ToolBarAction(Actions.SFTP, false),
+            ToolBarAction(Actions.TERMINAL_LOGGER, false),
+            ToolBarAction(Actions.MACRO, false),
             ToolBarAction(Actions.KEYWORD_HIGHLIGHT, true),
             ToolBarAction(Actions.KEY_MANAGER, true),
             ToolBarAction(MultipleAction.MULTIPLE, true),

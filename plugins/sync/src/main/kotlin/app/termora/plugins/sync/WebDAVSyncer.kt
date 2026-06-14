@@ -47,7 +47,7 @@ class WebDAVSyncer private constructor() : SafetySyncer() {
         // decode hosts
         if (config.ranges.contains(SyncRange.Hosts)) {
             json["Tags"]?.jsonPrimitive?.content?.let {
-                decodeTags(it, deletedData.filter { e -> e.type == "Tags" }, config)
+                decodeTags(it, deletedData.filter { e -> e.type == "Tag" }, config)
             }
             json["Hosts"]?.jsonPrimitive?.content?.let {
                 decodeHosts(it, deletedData.filter { e -> e.type == "Host" }, config)

@@ -7,6 +7,7 @@ import app.termora.actions.DataProviders
 import app.termora.database.DatabaseManager
 import app.termora.plugin.internal.ssh.SSHTerminalTab
 import app.termora.terminal.*
+import app.termora.snippet.SnippetSidePanel
 import app.termora.terminal.panel.vw.*
 import com.formdev.flatlaf.FlatClientProperties
 import com.formdev.flatlaf.util.SystemInfo
@@ -65,6 +66,10 @@ class TerminalPanel(val tab: TerminalTab?, val terminal: Terminal, private val w
     private val layeredPane = TerminalLayeredPane()
     private var visualWindows = emptyArray<VisualWindow>()
     private val terminalPreviewDialog = TerminalPreviewDialog()
+    private val snippetSidePanelHolder = JPanel(BorderLayout())
+    private var snippetSidePanel: SnippetSidePanel? = null
+    var isSnippetSidePanelVisible = false
+        private set
 
     val scrollBar = TerminalScrollBar(this, terminalFindPanel, terminal)
     var enableFloatingToolbar = true
@@ -148,7 +153,18 @@ class TerminalPanel(val tab: TerminalTab?, val terminal: Terminal, private val w
         if (enableFloatingToolbar) {
             layeredPane.add(floatingToolbar, JLayeredPane.POPUP_LAYER as Any)
         }
-        add(layeredPane, BorderLayout.CENTER)
+
+        snippetSidePanelHolder.isOpaque = true
+        snippetSidePanelHolder.background = DynamicColor("window")
+        snippetSidePanelHolder.border = BorderFactory.createMatteBorder(0, 1, 0, 0, DynamicColor.BorderColor)
+        snippetSidePanelHolder.isVisible = false
+        snippetSidePanelHolder.preferredSize = Dimension(360, 0)
+
+        val centerPanel = JPanel(BorderLayout())
+        centerPanel.add(layeredPane, BorderLayout.CENTER)
+        centerPanel.add(snippetSidePanelHolder, BorderLayout.EAST)
+
+        add(centerPanel, BorderLayout.CENTER)
         add(scrollBar, BorderLayout.EAST)
 
         hideFind()
@@ -559,6 +575,42 @@ class TerminalPanel(val tab: TerminalTab?, val terminal: Terminal, private val w
 
     internal fun hidePreview() {
         terminalPreviewDialog.isVisible = false
+    }
+
+    fun toggleSnippetSidePanel() {
+        if (isSnippetSidePanelVisible) {
+            hideSnippetSidePanel()
+        } else {
+            showSnippetSidePanel()
+        }
+    }
+
+    private fun showSnippetSidePanel() {
+        val t = tab as? PtyHostTerminalTab ?: return
+        if (snippetSidePanel == null) {
+            snippetSidePanel = SnippetSidePanel(t, this)
+        }
+        isSnippetSidePanelVisible = true
+        snippetSidePanelHolder.removeAll()
+        snippetSidePanelHolder.add(snippetSidePanel!!, BorderLayout.CENTER)
+        snippetSidePanelHolder.isVisible = true
+        snippetSidePanel!!.refreshSnippets()
+        revalidate()
+        repaint()
+    }
+
+    private fun hideSnippetSidePanel() {
+        isSnippetSidePanelVisible = false
+        snippetSidePanelHolder.isVisible = false
+        revalidate()
+        repaint()
+    }
+
+    internal fun setSnippetSidePanelWidth(newWidth: Int) {
+        snippetSidePanelHolder.preferredSize = Dimension(newWidth, 0)
+        snippetSidePanelHolder.size = Dimension(newWidth, snippetSidePanelHolder.height)
+        revalidate()
+        repaint()
     }
 
     internal fun isShowingPreview() = terminalPreviewDialog.isVisible

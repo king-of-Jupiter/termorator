@@ -76,11 +76,8 @@ class TermoraFrame : JFrame(), DataProvider {
             override fun stateChanged(e: ChangeEvent) {
                 val index = tabbedPane.selectedIndex
                 title = Application.getName()
-                if (layout == TermoraLayout.Screen) {
-                    if (index < 1) return
-                } else if (index < 0) {
-                    return
-                }
+                // 两种布局下，第一个标签都是「主页」，无需在标题栏体现
+                if (index < 1) return
                 title = tabbedPane.getTitleAt(index) + " - " + Application.getName()
             }
 

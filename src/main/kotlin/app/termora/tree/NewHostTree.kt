@@ -13,6 +13,7 @@ import app.termora.database.DatabaseManager
 import app.termora.plugin.ExtensionManager
 import app.termora.plugin.internal.sftppty.SFTPPtyProtocolProvider
 import app.termora.plugin.internal.ssh.SSHProtocolProvider
+import app.termora.plugin.internal.ssh.WinSCP
 import app.termora.protocol.TransferProtocolProvider
 import app.termora.tag.TagDialog
 import app.termora.tag.TagManager
@@ -36,6 +37,7 @@ import org.jdesktop.swingx.action.ActionManager
 import org.slf4j.LoggerFactory
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
+import java.awt.Component
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
@@ -272,6 +274,9 @@ class NewHostTree : SimpleTree(), Disposable {
         val openWithSFTP = openWith.add(sftpText)
         val openWithSFTPCommand = openWith.add(I18n.getString("termora.tabbed.contextmenu.sftp-command"))
         val openInNewWindow = popupMenu.add(I18n.getString("termora.welcome.contextmenu.open-in-new-window"))
+        // 仅 Windows 下提供 WinSCP 集成，作为独立菜单项
+        val openWithWinSCP = if (WinSCP.isSupported)
+            popupMenu.add(I18n.getString("termora.welcome.contextmenu.winscp")) else null
         popupMenu.addSeparator()
         val copy = popupMenu.add(I18n.getString("termora.welcome.contextmenu.copy"))
         val remove = popupMenu.add(I18n.getString("termora.welcome.contextmenu.remove"))
@@ -310,6 +315,7 @@ class NewHostTree : SimpleTree(), Disposable {
         openInNewWindow.addActionListener { openHosts(it, true) }
         openWithSFTP.addActionListener { openWithSFTP(it) }
         openWithSFTPCommand.addActionListener { openWithSFTPCommand(it) }
+        openWithWinSCP?.addActionListener { doOpenWithWinSCP() }
         newFolder.addActionListener {
             val host = Host(
                 id = randomUUID(),
@@ -410,6 +416,7 @@ class NewHostTree : SimpleTree(), Disposable {
         // 如果选中了 SSH 服务器，那么才启用
         openWithSFTP.isEnabled = fullNodes.map { it.host }.any { TransferProtocolProvider.valueOf(it.protocol) != null }
         openWithSFTPCommand.isEnabled = fullNodes.map { it.host }.any { it.protocol == SSHProtocolProvider.PROTOCOL }
+        openWithWinSCP?.isEnabled = fullNodes.map { it.host }.any { it.protocol == SSHProtocolProvider.PROTOCOL }
         openWith.isEnabled = openWith.menuComponents.any { it is JMenuItem && it.isEnabled }
 
 
@@ -498,7 +505,22 @@ class NewHostTree : SimpleTree(), Disposable {
             item.setMnemonic(mnemonic)
         }
 
-        popupMenu.show(this, evt.x, evt.y)
+        popupMenu.show(evt.component ?: this, evt.x, evt.y)
+    }
+
+    /**
+     * 在指定的调用者组件（例如卡片）上，针对某个主机弹出与侧边栏一致的右键菜单。
+     */
+    fun showContextmenuForHost(host: Host, invoker: Component, x: Int, y: Int) {
+        val node = simpleTreeModel.root.getAllChildren()
+            .filterIsInstance<HostTreeNode>()
+            .firstOrNull { it.id == host.id } ?: return
+        selectionPath = TreePath(simpleTreeModel.getPathToRoot(node))
+        val event = MouseEvent(
+            invoker, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
+            x, y, 1, true, MouseEvent.BUTTON3
+        )
+        showContextmenu(event)
     }
 
     override fun onRenamed(node: SimpleTreeNode<*>, text: String) {
@@ -611,6 +633,25 @@ class NewHostTree : SimpleTree(), Disposable {
                     evt
                 )
             )
+        }
+    }
+
+    private fun doOpenWithWinSCP() {
+        val hosts = getSelectionSimpleTreeNodes(true)
+            .map { it.host }.filter { it.protocol == SSHProtocolProvider.PROTOCOL }
+        if (hosts.isEmpty()) return
+        for (host in hosts) {
+            try {
+                WinSCP.open(host)
+            } catch (e: Exception) {
+                if (log.isErrorEnabled) {
+                    log.error(e.message, e)
+                }
+                OptionPane.showMessageDialog(
+                    owner, ExceptionUtils.getMessage(e),
+                    messageType = JOptionPane.ERROR_MESSAGE
+                )
+            }
         }
     }
 
