@@ -875,8 +875,8 @@ internal class SSHHostOptionsPane(private val accountOwner: AccountOwner) : Opti
         }
         private val table = JTable(model)
         private val addBtn = JButton(I18n.getString("termora.new-host.tunneling.add"))
-        private val moveUpBtn = JButton(I18n.getString("termora.transport.bookmarks.up"))
-        private val moveDownBtn = JButton(I18n.getString("termora.transport.bookmarks.down"))
+        private val moveUpBtn = JButton("↑")
+        private val moveDownBtn = JButton("↓")
         private val deleteBtn = JButton(I18n.getString("termora.new-host.tunneling.delete"))
 
         init {
