@@ -10,7 +10,6 @@ internal class SSHInternalPlugin : InternalPlugin() {
     init {
         support.addExtension(ProtocolProviderExtension::class.java) { SSHProtocolProviderExtension.instance }
         support.addExtension(ProtocolHostPanelExtension::class.java) { SSHProtocolHostPanelExtension.instance }
-        support.addExtension(TerminalTabbedContextMenuExtension::class.java) { SftpCommandTerminalTabbedContextMenuExtension.instance }
         support.addExtension(TerminalTabbedContextMenuExtension::class.java) { CloneSessionTerminalTabbedContextMenuExtension.instance }
     }
 

@@ -47,7 +47,6 @@ internal class SSHHostOptionsPane(private val accountOwner: AccountOwner) : Opti
         init()
     }
     private val jumpHostsOption = JumpHostsOption()
-    private val sftpOption = SFTPOption()
     private val owner: Window get() = SwingUtilities.getWindowAncestor(this)
     private var setHostMode = false
 
@@ -57,7 +56,6 @@ internal class SSHHostOptionsPane(private val accountOwner: AccountOwner) : Opti
         addOption(tunnelingOption)
         addOption(jumpHostsOption)
         addOption(terminalOption)
-        addOption(sftpOption)
 
     }
 
@@ -109,7 +107,6 @@ internal class SSHHostOptionsPane(private val accountOwner: AccountOwner) : Opti
             heartbeatInterval = (terminalOption.heartbeatIntervalTextField.value ?: 30) as Int,
             jumpHosts = jumpHostsOption.jumpHosts.map { it.id },
             serialComm = serialComm,
-            sftpDefaultDirectory = sftpOption.defaultDirectoryField.text,
             enableX11Forwarding = tunnelingOption.x11ForwardingCheckBox.isSelected,
             x11Forwarding = tunnelingOption.x11ServerTextField.text,
             loginScripts = terminalOption.loginScripts,
@@ -202,8 +199,6 @@ internal class SSHHostOptionsPane(private val accountOwner: AccountOwner) : Opti
         }
 
         jumpHostsOption.filter = { it.id != host.id }
-
-        sftpOption.defaultDirectoryField.text = host.options.sftpDefaultDirectory
     }
 
     fun validateFields(): Boolean {
@@ -551,55 +546,6 @@ internal class SSHHostOptionsPane(private val accountOwner: AccountOwner) : Opti
             }
             passwordPanel.revalidate()
             passwordPanel.repaint()
-        }
-    }
-
-
-    protected inner class SFTPOption : JPanel(BorderLayout()), Option {
-        val defaultDirectoryField = OutlineTextField(255)
-
-
-        init {
-            initView()
-            initEvents()
-        }
-
-        private fun initView() {
-            add(getCenterComponent(), BorderLayout.CENTER)
-        }
-
-        private fun initEvents() {
-
-        }
-
-
-        override fun getIcon(isSelected: Boolean): Icon {
-            return Icons.folder
-        }
-
-        override fun getTitle(): String {
-            return I18n.getString("termora.transport.sftp")
-        }
-
-        override fun getJComponent(): JComponent {
-            return this
-        }
-
-        private fun getCenterComponent(): JComponent {
-            val layout = FormLayout(
-                "left:pref, $FORM_MARGIN, default:grow",
-                "pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref, $FORM_MARGIN, pref"
-            )
-
-            var rows = 1
-            val step = 2
-            val panel = FormBuilder.create().layout(layout)
-                .add("${I18n.getString("termora.settings.sftp.default-directory")}:").xy(1, rows)
-                .add(defaultDirectoryField).xy(3, rows).apply { rows += step }
-                .build()
-
-
-            return panel
         }
     }
 

@@ -2,7 +2,7 @@ package app.termora.plugin
 
 import app.termora.I18n
 import app.termora.Icons
-import app.termora.transfer.ScaleIcon
+import app.termora.ScaleIcon
 import org.semver4j.Semver
 import java.io.File
 import java.util.*

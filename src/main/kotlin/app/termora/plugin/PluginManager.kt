@@ -9,15 +9,12 @@ import app.termora.plugin.internal.extension.DynamicExtensionPlugin
 import app.termora.plugin.internal.local.LocalInternalPlugin
 import app.termora.plugin.internal.plugin.PluginInternalPlugin
 import app.termora.plugin.internal.rdp.RDPInternalPlugin
-import app.termora.plugin.internal.sftppty.SFTPPtyInternalPlugin
 import app.termora.plugin.internal.ssh.SSHInternalPlugin
 import app.termora.plugin.internal.telnet.TelnetInternalPlugin
 import app.termora.plugin.internal.updater.UpdaterPlugin
 import app.termora.plugin.internal.wsl.WSLInternalPlugin
 import app.termora.swingCoroutineScope
 import app.termora.terminal.panel.vw.FloatingToolbarPlugin
-import app.termora.transfer.internal.local.LocalPlugin
-import app.termora.transfer.internal.sftp.SFTPPlugin
 import com.formdev.flatlaf.util.SystemInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -127,14 +124,6 @@ internal class PluginManager private constructor() {
         if (SystemUtils.IS_OS_WINDOWS) {
             plugins.add(PluginDescriptor(WSLInternalPlugin(), origin = PluginOrigin.Internal, version = version))
         }
-        // sftp pty plugin
-        plugins.add(PluginDescriptor(SFTPPtyInternalPlugin(), origin = PluginOrigin.Internal, version = version))
-
-        // local transfer plugin
-        plugins.add(PluginDescriptor(LocalPlugin(), origin = PluginOrigin.Internal, version = version))
-        // sftp transfer plugin
-        plugins.add(PluginDescriptor(SFTPPlugin(), origin = PluginOrigin.Internal, version = version))
-
         // floating
         plugins.add(PluginDescriptor(FloatingToolbarPlugin(), origin = PluginOrigin.Internal, version = version))
     }

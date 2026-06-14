@@ -6,7 +6,6 @@ import app.termora.actions.AnAction
 import app.termora.actions.AnActionEvent
 import app.termora.database.OwnerType
 import app.termora.protocol.*
-import app.termora.transfer.ScaleIcon
 import com.formdev.flatlaf.extras.components.FlatToolBar
 import com.formdev.flatlaf.ui.FlatButtonBorder
 import kotlinx.coroutines.Dispatchers

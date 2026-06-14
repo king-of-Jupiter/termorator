@@ -140,7 +140,7 @@ class SSHCopyIdDialog(
 
                 withContext(Dispatchers.Swing) {
                     // @formatter:off
-                    terminal.write("\t[${cyan(j + 1)}/${cyan(publicKeys.size)}] $publicKeyName ${I18n.getString("termora.transport.sftp.connecting")}")
+                    terminal.write("\t[${cyan(j + 1)}/${cyan(publicKeys.size)}] $publicKeyName ${I18n.getString("termora.connecting")}")
                     // @formatter:on
                 }
 

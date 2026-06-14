@@ -27,7 +27,7 @@ class NewHostTreeDialog(
         isModal = true
         isResizable = false
         controlsVisible = false
-        title = I18n.getString("termora.transport.sftp.select-host")
+        title = I18n.getString("termora.select-host")
 
         tree.contextmenu = false
         tree.doubleClickConnection = false

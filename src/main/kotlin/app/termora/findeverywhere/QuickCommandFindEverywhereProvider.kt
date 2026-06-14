@@ -23,8 +23,6 @@ class QuickCommandFindEverywhereProvider : FindEverywhereProvider {
         actionManager.getAction(OpenLocalTerminalAction.LOCAL_TERMINAL)?.let { list.add(ActionFindEverywhereResult(it)) }
         // Snippet
         actionManager.getAction(SnippetAction.SNIPPET)?.let { list.add(ActionFindEverywhereResult(it)) }
-        // SFTP
-        actionManager.getAction(Actions.SFTP)?.let { list.add(ActionFindEverywhereResult(it)) }
         // quick connect
         actionManager.getAction(QuickConnectAction.QUICK_CONNECT)?.let { list.add(ActionFindEverywhereResult(it)) }
 

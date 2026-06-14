@@ -136,8 +136,6 @@ object Icons {
     val anyType by lazy { DynamicIcon("icons/anyType.svg", "icons/anyType_dark.svg") }
     val toolWindowJsonPath by lazy { DynamicIcon("icons/toolWindowJsonPath.svg", "icons/toolWindowJsonPath_dark.svg") }
     val codeSpan by lazy { DynamicIcon("icons/codeSpan.svg", "icons/codeSpan_dark.svg") }
-    val fileTransfer by lazy { DynamicIcon("icons/fileTransfer.svg", "icons/fileTransfer_dark.svg") }
-    val transferToolWindow by lazy { DynamicIcon("icons/transferToolWindow.svg", "icons/transferToolWindow_dark.svg") }
     val help by lazy { DynamicIcon("icons/help.svg", "icons/help_dark.svg") }
     val applyNotConflictsLeft by lazy {
         DynamicIcon(

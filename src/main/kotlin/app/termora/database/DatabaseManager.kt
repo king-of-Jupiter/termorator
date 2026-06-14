@@ -46,7 +46,6 @@ class DatabaseManager private constructor() : Disposable {
     val properties by lazy { Properties(this) }
     val terminal by lazy { Terminal(this) }
     val appearance by lazy { Appearance(this) }
-    val sftp by lazy { SFTP(this) }
 
 
     private val map = Collections.synchronizedMap<String, String?>(mutableMapOf())
@@ -761,47 +760,6 @@ class DatabaseManager private constructor() : Disposable {
          * 透明度
          */
         var opacity by DoublePropertyDelegate(1.0)
-    }
-
-    /**
-     * SFTP
-     */
-    class SFTP(databaseManager: DatabaseManager) : IProperties(databaseManager, "Setting.SFTP") {
-
-
-        /**
-         * 编辑命令
-         */
-        var editCommand by StringPropertyDelegate(StringUtils.EMPTY)
-
-        /**
-         * 双击行为
-         *
-         * Transfer、Edit
-         */
-        var dbClickBehavior by StringPropertyDelegate("Transfer")
-
-        /**
-         * sftp command
-         */
-        var sftpCommand by StringPropertyDelegate(StringUtils.EMPTY)
-
-        /**
-         * defaultDirectory
-         */
-        var defaultDirectory by StringPropertyDelegate(StringUtils.EMPTY)
-
-
-        /**
-         * 是否固定在标签栏
-         */
-        var pinTab by BooleanPropertyDelegate(false)
-
-        /**
-         * 是否保留原始文件时间
-         */
-        var preserveModificationTime by BooleanPropertyDelegate(false)
-
     }
 
 }

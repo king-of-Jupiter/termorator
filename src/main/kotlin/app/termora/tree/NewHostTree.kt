@@ -11,14 +11,11 @@ import app.termora.actions.OpenHostAction
 import app.termora.database.DatabaseChangedExtension
 import app.termora.database.DatabaseManager
 import app.termora.plugin.ExtensionManager
-import app.termora.plugin.internal.sftppty.SFTPPtyProtocolProvider
 import app.termora.plugin.internal.ssh.SSHProtocolProvider
 import app.termora.plugin.internal.ssh.WinSCP
-import app.termora.protocol.TransferProtocolProvider
 import app.termora.tag.TagDialog
 import app.termora.tag.TagManager
 import app.termora.tag.TagSimpleTreeCellRendererExtension
-import app.termora.transfer.TransferActionEvent
 import com.formdev.flatlaf.extras.components.FlatPopupMenu
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
@@ -75,7 +72,6 @@ class NewHostTree : SimpleTree(), Disposable {
     private val properties get() = DatabaseManager.getInstance().properties
     private val owner get() = SwingUtilities.getWindowAncestor(this)
     private val openHostAction get() = ActionManager.getInstance().getAction(OpenHostAction.OPEN_HOST)
-    private val sftpAction get() = ActionManager.getInstance().getAction(app.termora.Actions.SFTP)
     private val enableManager get() = EnableManager.getInstance()
     private var isShowMoreInfo
         get() = enableManager.isShowMoreInfo()
@@ -266,13 +262,7 @@ class NewHostTree : SimpleTree(), Disposable {
         val sshMenu = importMenu.add(".ssh/config")
         val mobaXtermMenu = importMenu.add("MobaXterm")
 
-        // 为了避免误导，如果是 SSH 右键时显示 SFTP
-        val sftpText = if (SSHProtocolProvider.PROTOCOL.equals(lastHost.protocol, true))
-            "SFTP" else I18n.getString("termora.transport.sftp")
         val open = popupMenu.add(I18n.getString("termora.welcome.contextmenu.connect"))
-        val openWith = popupMenu.add(JMenu(I18n.getString("termora.welcome.contextmenu.connect-with"))) as JMenu
-        val openWithSFTP = openWith.add(sftpText)
-        val openWithSFTPCommand = openWith.add(I18n.getString("termora.tabbed.contextmenu.sftp-command"))
         val openInNewWindow = popupMenu.add(I18n.getString("termora.welcome.contextmenu.open-in-new-window"))
         // 仅 Windows 下提供 WinSCP 集成，作为独立菜单项
         val openWithWinSCP = if (WinSCP.isSupported)
@@ -313,8 +303,6 @@ class NewHostTree : SimpleTree(), Disposable {
         windTermMenu.addActionListener { importHosts(lastNode, ImportType.WindTerm) }
         open.addActionListener { openHosts(it, false) }
         openInNewWindow.addActionListener { openHosts(it, true) }
-        openWithSFTP.addActionListener { openWithSFTP(it) }
-        openWithSFTPCommand.addActionListener { openWithSFTPCommand(it) }
         openWithWinSCP?.addActionListener { doOpenWithWinSCP() }
         newFolder.addActionListener {
             val host = Host(
@@ -413,11 +401,7 @@ class NewHostTree : SimpleTree(), Disposable {
         refresh.isEnabled = lastNode.isFolder
         importMenu.isEnabled = lastNode.isFolder
 
-        // 如果选中了 SSH 服务器，那么才启用
-        openWithSFTP.isEnabled = fullNodes.map { it.host }.any { TransferProtocolProvider.valueOf(it.protocol) != null }
-        openWithSFTPCommand.isEnabled = fullNodes.map { it.host }.any { it.protocol == SSHProtocolProvider.PROTOCOL }
         openWithWinSCP?.isEnabled = fullNodes.map { it.host }.any { it.protocol == SSHProtocolProvider.PROTOCOL }
-        openWith.isEnabled = openWith.menuComponents.any { it is JMenuItem && it.isEnabled }
 
 
         for (tag in tags) {
@@ -609,31 +593,6 @@ class NewHostTree : SimpleTree(), Disposable {
             TermoraFrameManager.getInstance().createWindow().apply { isVisible = true }
         else evt.source
         nodes.map { it.host }.forEach { openHostAction.actionPerformed(OpenHostActionEvent(source, it, evt)) }
-    }
-
-    private fun openWithSFTP(evt: EventObject) {
-        val hosts = getSelectionSimpleTreeNodes(true)
-            .map { it.host }.filter { TransferProtocolProvider.valueOf(it.protocol) != null }
-        if (hosts.isEmpty()) return
-
-        for (host in hosts) {
-            sftpAction.actionPerformed(TransferActionEvent(this, host, evt))
-        }
-    }
-
-    private fun openWithSFTPCommand(evt: EventObject) {
-        val nodes =
-            getSelectionSimpleTreeNodes(true).map { it.host }.filter { it.protocol == SSHProtocolProvider.PROTOCOL }
-        if (nodes.isEmpty()) return
-        for (host in nodes) {
-            openHostAction.actionPerformed(
-                OpenHostActionEvent(
-                    this,
-                    host.copy(protocol = SFTPPtyProtocolProvider.PROTOCOL),
-                    evt
-                )
-            )
-        }
     }
 
     private fun doOpenWithWinSCP() {

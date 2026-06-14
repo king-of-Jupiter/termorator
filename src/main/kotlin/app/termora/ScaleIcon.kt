@@ -1,7 +1,5 @@
-package app.termora.transfer
+package app.termora
 
-import app.termora.restore
-import app.termora.save
 import java.awt.Component
 import java.awt.Graphics
 import java.awt.Graphics2D

@@ -31,7 +31,6 @@ class KeymapTableModel : DefaultTableModel() {
             NewWindowAction.NEW_WINDOW,
             TabReconnectAction.RECONNECT_TAB,
             TerminalClearScreenAction.CLEAR_SCREEN,
-            SFTPCommandAction.SFTP_COMMAND,
             SwitchTabAction.SWITCH_TAB,
         )) {
             val action = actionManager.getAction(id) ?: continue

@@ -26,11 +26,6 @@ interface ProtocolProvider {
     fun isTransient(): Boolean = false
 
     /**
-     * 是否是传输协议，如果返回 true 那么就是对 SFTP 的扩展
-     */
-    fun isTransfer(): Boolean = false
-
-    /**
      * 协议图标
      */
     fun getIcon(width: Int = 16, height: Int = 16): DynamicIcon = Icons.terminal

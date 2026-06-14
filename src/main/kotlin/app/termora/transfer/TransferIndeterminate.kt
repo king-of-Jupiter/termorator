@@ -1,3 +1,0 @@
-package app.termora.transfer
-
-interface TransferIndeterminate
