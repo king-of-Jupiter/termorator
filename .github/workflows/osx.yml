@@ -2,6 +2,9 @@ name: macOS
 
 on: [ push, pull_request ]
 
+permissions:
+  contents: read
+
 env:
   TERMORA_MAC_SIGN: "${{ github.repository == 'TermoraDev/termora' }}"
   TERMORA_MAC_SIGN_USER_NAME: ${{ secrets.TERMORA_MAC_SIGN_USER_NAME }}
@@ -16,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-15-intel, macos-latest ]
+        os: ${{ fromJSON(vars.TERMORA_REDUCED_BUILDS == 'true' && '["macos-latest"]' || '["macos-15-intel","macos-latest"]') }}
     steps:
       - uses: actions/checkout@v4
         with:
