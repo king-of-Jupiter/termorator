@@ -400,11 +400,8 @@ class SettingsOptionsPane : OptionsPane() {
             builder.add("${I18n.getString("termora.settings.appearance.tab-order")}:").xy(1, rows)
                 .add(tabOrderComboBox).xy(3, rows).apply { rows += step }
 
-            val confirmTabCloseBox = Box.createHorizontalBox()
-            confirmTabCloseBox.add(JLabel("${I18n.getString("termora.settings.appearance.confirm-tab-close")}:"))
-            confirmTabCloseBox.add(Box.createHorizontalStrut(8))
-            confirmTabCloseBox.add(confirmTabCloseComBoBox)
-            builder.add(confirmTabCloseBox).xyw(1, rows, 3).apply { rows += step }
+            builder.add("${I18n.getString("termora.settings.appearance.confirm-tab-close")}:").xy(1, rows)
+                .add(confirmTabCloseComBoBox).xy(3, rows).apply { rows += step }
 
             return builder.build()
         }
