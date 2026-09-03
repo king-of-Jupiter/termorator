@@ -10,6 +10,7 @@ import app.termora.actions.AnActionEvent
 import app.termora.actions.OpenHostAction
 import app.termora.database.DatabaseChangedExtension
 import app.termora.database.DatabaseManager
+import app.termora.migration.TermiusMigration
 import app.termora.plugin.ExtensionManager
 import app.termora.plugin.internal.ssh.SSHProtocolProvider
 import app.termora.plugin.internal.ssh.WinSCP
@@ -261,6 +262,7 @@ class NewHostTree : SimpleTree(), Disposable {
         val secureCRTMenu = importMenu.add("SecureCRT")
         val sshMenu = importMenu.add(".ssh/config")
         val mobaXtermMenu = importMenu.add("MobaXterm")
+        val termiusMenu = importMenu.add("Termius")
 
         val open = popupMenu.add(I18n.getString("termora.welcome.contextmenu.connect"))
         val openInNewWindow = popupMenu.add(I18n.getString("termora.welcome.contextmenu.open-in-new-window"))
@@ -301,6 +303,7 @@ class NewHostTree : SimpleTree(), Disposable {
         finalShellMenu.addActionListener { importHosts(lastNode, ImportType.FinalShell) }
         csvMenu.addActionListener { importHosts(lastNode, ImportType.CSV) }
         windTermMenu.addActionListener { importHosts(lastNode, ImportType.WindTerm) }
+        termiusMenu.addActionListener { importHosts(lastNode, ImportType.Termius) }
         open.addActionListener { openHosts(it, false) }
         openInNewWindow.addActionListener { openHosts(it, true) }
         openWithWinSCP?.addActionListener { doOpenWithWinSCP() }
@@ -499,6 +502,21 @@ class NewHostTree : SimpleTree(), Disposable {
         val node = simpleTreeModel.root.getAllChildren()
             .filterIsInstance<HostTreeNode>()
             .firstOrNull { it.id == host.id } ?: return
+        showContextmenuForNode(node, invoker, x, y)
+    }
+
+    /**
+     * Shows the root hosts context menu for UI entry points that do not represent
+     * a persisted host, such as the "New host" card.
+     */
+    fun showContextmenuForRoot(invoker: Component, x: Int, y: Int) {
+        val node = simpleTreeModel.root.getAllChildren()
+            .filterIsInstance<HostTreeNode>()
+            .firstOrNull { it.id == "0" } ?: return
+        showContextmenuForNode(node, invoker, x, y)
+    }
+
+    private fun showContextmenuForNode(node: HostTreeNode, invoker: Component, x: Int, y: Int) {
         selectionPath = TreePath(simpleTreeModel.getPathToRoot(node))
         val event = MouseEvent(
             invoker, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
@@ -637,6 +655,8 @@ class NewHostTree : SimpleTree(), Disposable {
             ImportType.CSV -> chooser.fileFilter = FileNameExtensionFilter("CSV (*.csv)", "csv")
             ImportType.SecureCRT -> chooser.fileFilter = FileNameExtensionFilter("SecureCRT (*.xml)", "xml")
             ImportType.electerm -> chooser.fileFilter = FileNameExtensionFilter("electerm (*.json)", "json")
+            ImportType.Termius -> chooser.fileFilter =
+                FileNameExtensionFilter("Termius for Termorator (*.json)", "json")
             ImportType.PuTTY -> chooser.fileFilter = FileNameExtensionFilter("PuTTY (*.reg)", "reg")
             ImportType.MobaXterm -> chooser.fileFilter =
                 FileNameExtensionFilter("MobaXterm (*.mobaconf,*.ini)", "ini", "mobaconf")
@@ -738,6 +758,38 @@ class NewHostTree : SimpleTree(), Disposable {
             )
         }
 
+        if (type == ImportType.Termius) {
+            val selectedFile = requireNotNull(file)
+            val accountOwner = AccountManager.getInstance().getOwners()
+                .first { it.id == folder.host.ownerId }
+            val result = TermiusMigration.import(selectedFile, folder.host, accountOwner)
+            simpleTreeModel.reload(folder)
+            expandPath(TreePath(simpleTreeModel.getPathToRoot(folder)))
+
+            val summary = I18n.getString(
+                "termora.welcome.contextmenu.import.termius.done",
+                result.hosts,
+                result.groups,
+                result.keys,
+                result.snippets,
+            )
+            val message = if (result.warnings.isEmpty()) {
+                summary
+            } else {
+                summary + "\n\n" + I18n.getString(
+                    "termora.welcome.contextmenu.import.termius.warnings",
+                    result.warnings.size,
+                ) + "\n" + result.warnings.take(10).joinToString("\n") { "• $it" }
+            }
+            OptionPane.showMessageDialog(
+                owner,
+                message,
+                messageType = if (result.warnings.isEmpty()) JOptionPane.INFORMATION_MESSAGE
+                else JOptionPane.WARNING_MESSAGE,
+            )
+            return
+        }
+
         val nodes = when (type) {
             ImportType.SSH -> parseFromSSH(folder)
             ImportType.WindTerm -> parseFromWindTerm(folder, file)
@@ -748,6 +800,7 @@ class NewHostTree : SimpleTree(), Disposable {
             ImportType.FinalShell -> parseFromFinalShell(folder, file)
             ImportType.electerm -> parseFromElecterm(folder, file)
             ImportType.CSV -> file.bufferedReader().use { parseFromCSV(folder, it) }
+            ImportType.Termius -> emptyList()
         }
 
         if (nodes.isEmpty()) return
@@ -1182,6 +1235,7 @@ class NewHostTree : SimpleTree(), Disposable {
         SSH,
         FinalShell,
         electerm,
+        Termius,
     }
 
     private class NodesTransferable(val nodes: List<HostTreeNode>) : Transferable {

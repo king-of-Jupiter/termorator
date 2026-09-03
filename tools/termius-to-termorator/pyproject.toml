@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "termorator-termius-export"
+version = "1.0.0"
+description = "Export Termius hosts, groups, SSH keys and snippets for Termorator"
+requires-python = ">=3.11"
+dependencies = [
+  "termius-export @ git+https://github.com/y01and3/termius-export.git@d1a34e9bbf1dcf63dbcb910cfc24d54460a287d0",
+]
+
+[project.scripts]
+termorator-termius-export = "termorator_termius_export.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

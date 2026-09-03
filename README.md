@@ -46,6 +46,7 @@
 | **Починка SSH** — откат `SSHTerminalTab` к оригиналу, возврат `SftpCommand`, `sftppty`, `DatabaseManager.SFTP` | `upstream/2.x` |
 | **Нет писка** — `AuditoryCues.playList = null` + `beep` no-op для поля поиска/дерева | `ApplicationRunner`, `WelcomePanel` |
 | **Старт без плясок с JDK** — `start.bat` авто-ставит `JAVA_HOME=C:\Program Files\JBR`, `settings.gradle.kts` `foojay 1.0.0` для `Gradle 9` | `start.bat`, `settings.gradle.kts` |
+| **Миграция из Termius** — хосты, вложенные группы, ключи и сниппеты | `tools/termius-to-termorator`, `TermiusMigration` |
 
 ---
 
@@ -72,9 +73,19 @@
 <div align="center"><img src="docs/transfer-edit.png" alt="Edit" width="85%" /></div>
 
 ### 💻 Хосты
-- Иерархия как папки, теги, импорт из `FinalShell / Xshell / MobaXterm / Electerm` и др.
+- Иерархия как папки, теги, импорт из `Termius / FinalShell / Xshell / MobaXterm / Electerm` и др.
 
 <div align="center"><img src="docs/host.png" alt="Hosts" width="85%" /></div>
+
+### 🔄 Миграция из Termius
+
+Экспортёр переносит SSH-хосты с вложенными группами, пароли, обычные SSH-ключи, прокси,
+пробросы портов, сниппеты и их пакеты. Он использует офлайн-чтение Termius IndexedDB из
+MIT-проекта [`y01and3/termius-export`](https://github.com/y01and3/termius-export); Termius не
+запускается и его данные не изменяются.
+
+Инструкция по запуску: [`tools/termius-to-termorator/README.md`](tools/termius-to-termorator/README.md).
+После экспорта выберите в дереве хостов **Импорт → Termius**.
 
 ### 🧩 Плагины (как в оригинале, часть выпилена в этом форке для фокуса на SSH)
 - 🌍 Geo, 🔄 Sync (Gist/WebDAV), 🗂️ WebDAV, 📝 Editor, 📡 SMB, ☁️ S3/OBS/COS/OSS, 🔌 Serial, 🖥️ VNC

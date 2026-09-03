@@ -27,6 +27,7 @@
 | **Починка SSH** — `SSHTerminalTab`/`sftppty`/`DatabaseManager.SFTP` из оригинала | `upstream/2.x` |
 | **Без писка** — `AuditoryCues.playList = null` | `ApplicationRunner`, `WelcomePanel` |
 | **Старт без проблем с JDK** — `start.bat` ставит `JBR 25`, `foojay 1.0.0` | `start.bat` |
+| **Миграция из Termius** — хосты, вложенные группы, ключи и сниппеты | `tools/termius-to-termorator`, `TermiusMigration` |
 
 ---
 
@@ -34,6 +35,13 @@
 
 - Windows / macOS / Linux, менеджер ключей, X11, SSH-Agent, System info, Nvidia SMI
 - SFTP `A↔B`, рекурсия, 6 потоков, `rm -rf`, поиск, сниппеты
+
+## 🔄 Миграция из Termius
+
+Экспортёр переносит SSH-хосты с группами, пароли, обычные SSH-ключи, прокси, пробросы
+портов, сниппеты и пакеты сниппетов. Подробный запуск описан в
+[`tools/termius-to-termorator/README.md`](tools/termius-to-termorator/README.md). Полученный
+JSON импортируется через контекстное меню папки: **Импорт → Termius**.
 
 ## 📦 Скачать
 

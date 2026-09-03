@@ -265,3 +265,7 @@ https://github.com/semver4j/semver4j/blob/main/LICENSE
 dom4j
 Plexus (https://dom4j.github.io)
 https://github.com/dom4j/dom4j/blob/master/LICENSE
+
+termius-export (development migration utility dependency)
+MIT License
+https://github.com/y01and3/termius-export/blob/d1a34e9bbf1dcf63dbcb910cfc24d54460a287d0/LICENSE

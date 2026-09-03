@@ -310,11 +310,6 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
                 g2.color = finalBg
                 g2.fillRoundRect(0, 0, width - 1, height - 2, arc, arc)
 
-                // Subtle top highlight (Apple's signature light reflection)
-                val highlightAlpha = (alpha * 40 + 15).toInt().coerceIn(15, 55)
-                g2.color = Color(255, 255, 255, highlightAlpha)
-                g2.fillRoundRect(0, 0, width - 1, 1, arc, arc)
-
                 // Border - very thin, barely visible
                 g2.color = if (alpha > 0.2f)
                     blend(DynamicColor.BorderColor, UIManager.getColor("Component.accentColor") ?: DynamicColor.BorderColor, alpha * 0.2f)
@@ -512,12 +507,24 @@ class HostCardsPanel(private val hostTreeProvider: () -> NewHostTree? = { null }
 
             addMouseListener(object : MouseAdapter() {
                 override fun mousePressed(e: MouseEvent) {
+                    if (showContextMenu(e)) return
+
                     if (SwingUtilities.isLeftMouseButton(e)) {
                         actionManager.getAction(NewHostAction.NEW_HOST)
                             ?.actionPerformed(
                                 java.awt.event.ActionEvent(this@AddCard, java.awt.event.ActionEvent.ACTION_PERFORMED, StringUtils.EMPTY)
                             )
                     }
+                }
+
+                override fun mouseReleased(e: MouseEvent) {
+                    showContextMenu(e)
+                }
+
+                private fun showContextMenu(e: MouseEvent): Boolean {
+                    if (e.isPopupTrigger.not()) return false
+                    hostTreeProvider()?.showContextmenuForRoot(this@AddCard, e.x, e.y)
+                    return true
                 }
             })
         }
