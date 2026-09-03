@@ -15,12 +15,16 @@ import kotlinx.coroutines.sync.Mutex
 import org.apache.commons.io.Charsets
 import org.apache.sshd.client.SshClient
 import org.apache.sshd.client.channel.ChannelShell
+import org.apache.sshd.client.channel.ClientChannelEvent
 import org.apache.sshd.client.session.ClientSession
 import org.apache.sshd.common.future.CloseFuture
 import org.apache.sshd.common.future.SshFutureListener
 import org.slf4j.LoggerFactory
 import java.awt.event.KeyEvent
+import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
+import java.util.Collections
+import java.util.EnumSet
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
@@ -35,6 +39,8 @@ class SSHTerminalTab(
         val SSHSession = DataKey(ClientSession::class)
         internal val MySshHandler = DataKey(SshHandler::class)
         private val log = LoggerFactory.getLogger(SSHTerminalTab::class.java)
+        private val detectingHosts = Collections.synchronizedSet(mutableSetOf<String>())
+        private const val OS_DETECTION_TIMEOUT = 5_000L
     }
 
     private val mutex = Mutex()
@@ -95,9 +101,10 @@ class SSHTerminalTab(
         }
 
         val channel: ChannelShell
+        val session: ClientSession
         try {
             val client = openClient()
-            val session = openSession(client)
+            session = openSession(client)
             channel = openChannel(session)
             // 打开隧道
             openTunnelings(session, host)
@@ -124,6 +131,8 @@ class SSHTerminalTab(
 
         }
 
+        detectOS(session)
+
         return ptyConnectorFactory.decorate(
             ZModemPtyConnectorAdaptor(
                 terminal,
@@ -134,6 +143,76 @@ class SSHTerminalTab(
                 )
             )
         )
+    }
+
+    private fun detectOS(session: ClientSession) {
+        val savedOS = host.options.extras["osIcon"]
+            ?.let { runCatching { OSDetector.OSType.valueOf(it) }.getOrNull() }
+        if (savedOS != null && savedOS != OSDetector.OSType.UNKNOWN) return
+        if (host.isTemporary || host.ownerType.isBlank()) return
+        if (!detectingHosts.add(host.id)) return
+
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                // Let the interactive shell finish opening before adding an exec channel.
+                delay(500.milliseconds)
+
+                val osType = OSDetector.getDetectCommands()
+                    .asSequence()
+                    .map { command -> executeDetectionCommand(session, command) }
+                    .map(OSDetector::detect)
+                    .firstOrNull { it != OSDetector.OSType.UNKNOWN }
+                    ?: OSDetector.OSType.UNKNOWN
+
+                if (osType == OSDetector.OSType.UNKNOWN) {
+                    log.debug("Could not detect OS for host: {}", host.name)
+                    return@launch
+                }
+
+                withContext(Dispatchers.Swing) {
+                    val hostManager = HostManager.getInstance()
+                    val currentHost = hostManager.getHost(host.id) ?: return@withContext
+                    if (currentHost.options.extras["osIcon"] == osType.name) return@withContext
+
+                    hostManager.addHost(
+                        currentHost.copy(
+                            options = currentHost.options.copy(
+                                extras = currentHost.options.extras + ("osIcon" to osType.name)
+                            )
+                        )
+                    )
+                    log.info("Detected {} for host: {}", osType, host.name)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.debug("OS detection failed for host: {}", host.name, e)
+            } finally {
+                detectingHosts.remove(host.id)
+            }
+        }
+    }
+
+    private fun executeDetectionCommand(session: ClientSession, command: String): String {
+        val stdout = ByteArrayOutputStream()
+        val stderr = ByteArrayOutputStream()
+        val channel = session.createExecChannel(command).apply {
+            out = stdout
+            err = stderr
+        }
+
+        return try {
+            channel.open().verify(OS_DETECTION_TIMEOUT)
+            val events = channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), OS_DETECTION_TIMEOUT)
+            if (ClientChannelEvent.CLOSED !in events) {
+                log.debug("OS detection command timed out for host: {}", host.name)
+                ""
+            } else {
+                stdout.toString(StandardCharsets.UTF_8)
+            }
+        } finally {
+            channel.close(false)
+        }
     }
 
     private suspend fun openTunnelings(session: ClientSession, host: Host) {

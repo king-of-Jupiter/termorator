@@ -13,10 +13,8 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ macos-15-intel, macos-latest ]
+    # macos-15 is GitHub's ARM64 hosted macOS runner.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
         with:

@@ -8,6 +8,11 @@ import javax.swing.Icon
  */
 object OSDetector {
 
+    private val detectCommands = listOf(
+        "cat /etc/os-release 2>/dev/null || uname -s 2>/dev/null",
+        "cmd.exe /d /c ver",
+    )
+
     enum class OSType {
         UBUNTU,
         DEBIAN,
@@ -88,12 +93,7 @@ object OSDetector {
         }
     }
 
-    /**
-     * Returns the command to detect the OS.
-     */
-    fun getDetectCommand(): String {
-        return "cat /etc/os-release 2>/dev/null || uname -s"
-    }
+    fun getDetectCommands(): List<String> = detectCommands
 
     /**
      * Parses the command output to determine OS type.
@@ -107,11 +107,12 @@ object OSDetector {
         }
 
         // Check uname output
-        val uname = trimmed.lines().firstOrNull()?.trim()?.lowercase() ?: ""
+        val uname = trimmed.lowercase()
         return when {
             uname.contains("linux") -> OSType.LINUX
             uname.contains("darwin") -> OSType.MACOS
-            uname.contains("windows") || uname.contains("mingw") || uname.contains("msys") -> OSType.WINDOWS
+            uname.contains("windows") || uname.contains("mingw") || uname.contains("msys") ||
+                    uname.contains("cygwin") -> OSType.WINDOWS
             else -> OSType.UNKNOWN
         }
     }

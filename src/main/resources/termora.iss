@@ -5,7 +5,7 @@
 #define MyAppURL "https://github.com/TermoraDev/termora"
 #define MyAppSupportURL "https://github.com/TermoraDev/termora/issues"
 #define MyAppUpdatesURL "https://github.com/TermoraDev/termora/releases"
-#define MyAppExeName "Termora.exe"
+#define MyAppExeName MyAppName + ".exe"
 
 
 [Setup]
