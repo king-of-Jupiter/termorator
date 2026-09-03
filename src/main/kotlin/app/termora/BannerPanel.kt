@@ -13,7 +13,7 @@ class BannerPanel(fontSize: Int = 11, val beautiful: Boolean = false) : JCompone
     | |/ _ \ '__| '_ ` _ \ / _ \| '__/ _` | __/ _ \| '__|
     | |  __/ |  | | | | | | (_) | | | (_| | || (_) | |   
     |_|\___|_|  |_| |_| |_|\___/|_|  \__,_|\__\___/|_|   
-              Termorator — based on Termorator
+              Termorator — based on Termora
 """.trimIndent().lines()
 
     init {
