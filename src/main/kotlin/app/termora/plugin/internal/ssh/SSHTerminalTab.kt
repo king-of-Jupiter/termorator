@@ -15,7 +15,6 @@ import kotlinx.coroutines.sync.Mutex
 import org.apache.commons.io.Charsets
 import org.apache.sshd.client.SshClient
 import org.apache.sshd.client.channel.ChannelShell
-import org.apache.sshd.client.channel.ClientChannelEvent
 import org.apache.sshd.client.session.ClientSession
 import org.apache.sshd.common.future.CloseFuture
 import org.apache.sshd.common.future.SshFutureListener
@@ -36,7 +35,6 @@ class SSHTerminalTab(
         val SSHSession = DataKey(ClientSession::class)
         internal val MySshHandler = DataKey(SshHandler::class)
         private val log = LoggerFactory.getLogger(SSHTerminalTab::class.java)
-        private val detectingHosts = java.util.Collections.synchronizedSet(mutableSetOf<String>())
     }
 
     private val mutex = Mutex()
@@ -61,20 +59,14 @@ class SSHTerminalTab(
     }
 
     override suspend fun openPtyConnector(): PtyConnector {
-        // Wait for mutex with timeout to handle concurrent connections
-        val acquired = withTimeoutOrNull(30_000) {
-            mutex.lock()
-            true
-        } ?: false
-
-        if (acquired) {
+        if (mutex.tryLock()) {
             try {
                 return doOpenPtyConnector()
             } finally {
                 mutex.unlock()
             }
         }
-        throw IllegalStateException("Connection timeout - another connection is in progress")
+        throw IllegalStateException("Opening PtyConnector")
     }
 
 
@@ -103,10 +95,9 @@ class SSHTerminalTab(
         }
 
         val channel: ChannelShell
-        var session: ClientSession? = null
         try {
             val client = openClient()
-            session = openSession(client)
+            val session = openSession(client)
             channel = openChannel(session)
             // 打开隧道
             openTunnelings(session, host)
@@ -133,9 +124,6 @@ class SSHTerminalTab(
 
         }
 
-        // TODO: OS detection temporarily disabled - causes SSH lag
-        // detectOS()
-
         return ptyConnectorFactory.decorate(
             ZModemPtyConnectorAdaptor(
                 terminal,
@@ -146,60 +134,6 @@ class SSHTerminalTab(
                 )
             )
         )
-    }
-
-    private fun detectOS() {
-        // Skip if already detected
-        if (host.options.extras.containsKey("osIcon")) return
-        // Skip if another tab is already detecting this host
-        if (!detectingHosts.add(host.id)) return
-
-        // Run detection in background with delay to avoid connection burst
-        swingCoroutineScope.launch(Dispatchers.IO) {
-            try {
-                // Wait before connecting to avoid simultaneous connections
-                delay(2000.milliseconds)
-
-                log.info("Detecting OS for host: {}", host.name)
-                val client = SshClients.openClient(host, owner)
-                try {
-                    val session = SshClients.openSession(host, client)
-                    try {
-                        val channel = session.createExecChannel(OSDetector.getDetectCommand())
-                        val baos = java.io.ByteArrayOutputStream()
-                        channel.out = baos
-                        val timeout = 5000L
-                        if (channel.open().verify(timeout).await(timeout)) {
-                            channel.waitFor(java.util.EnumSet.of(ClientChannelEvent.CLOSED), timeout)
-                        }
-                        val output = baos.toString()
-                        log.info("OS detection output: {}", output.take(200))
-                        channel.close(false)
-                        val osType = OSDetector.detect(output)
-                        log.info("Detected OS type: {}", osType)
-                        // Store detected OS in host extras
-                        withContext(Dispatchers.Swing) {
-                            val newExtras = host.options.extras.toMutableMap()
-                            newExtras["osIcon"] = osType.name
-                            val newHost = host.copy(
-                                options = host.options.copy(extras = newExtras),
-                                ownerType = if (host.ownerType.isBlank()) "User" else host.ownerType
-                            )
-                            HostManager.getInstance().addHost(newHost)
-                            log.info("Saved OS icon for host: {}", host.name)
-                        }
-                    } finally {
-                        session.close(false)
-                    }
-                } finally {
-                    client.close()
-                }
-            } catch (e: Exception) {
-                log.warn("OS detection failed for {}: {}", host.name, e.message)
-            } finally {
-                detectingHosts.remove(host.id)
-            }
-        }
     }
 
     private suspend fun openTunnelings(session: ClientSession, host: Host) {

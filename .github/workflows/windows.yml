@@ -56,6 +56,11 @@ jobs:
       - name: Install 7z
         uses: milliewalky/setup-7-zip@v2
 
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Installing Java
         run: |
           $zipPath = "${{ runner.temp }}\java_package.zip"
@@ -97,20 +102,20 @@ jobs:
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-windows-zip-${{ runner.arch }}
+          name: termorator-windows-zip-${{ runner.arch }}
           path: |
             build/distributions/*.zip
 
       - name: Upload exe artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-windows-exe-${{ runner.arch }}
+          name: termorator-windows-exe-${{ runner.arch }}
           path: |
             build/distributions/*.exe
 
       - name: Upload msix artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-windows-msix-${{ runner.arch }}
+          name: termorator-windows-msix-${{ runner.arch }}
           path: |
             build/distributions/*.msix

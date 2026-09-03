@@ -257,6 +257,10 @@ class ApplicationRunner {
             UIManager.put("TitlePane.showIconInDialogs", false)
         }
 
+        // Отключить системный звук Windows при лишнем backspace / ошибке ввода
+        UIManager.put("AuditoryCues.playList", null)
+        UIManager.getLookAndFeelDefaults().put("AuditoryCues.playList", null)
+
         UIManager.put("Table.rowHeight", 24)
         UIManager.put("Table.focusCellHighlightBorder", FlatTableCellBorder.Default())
         UIManager.put("Table.focusSelectedCellHighlightBorder", FlatTableCellBorder.Default())

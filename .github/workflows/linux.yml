@@ -62,20 +62,20 @@ jobs:
       - name: Upload targz artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-linux-targz-${{ runner.arch }}
+          name: termorator-linux-targz-${{ runner.arch }}
           path: |
             build/distributions/*.tar.gz
 
       - name: Upload AppImage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-linux-AppImage-${{ runner.arch }}
+          name: termorator-linux-AppImage-${{ runner.arch }}
           path: |
             build/distributions/*.AppImage
 
       - name: Upload deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-linux-deb-${{ runner.arch }}
+          name: termorator-linux-deb-${{ runner.arch }}
           path: |
             build/distributions/*.deb

@@ -80,6 +80,11 @@ class WelcomePanel(
             (UIManager.getInt("TitleBar.height") * 0.85).toInt()
         )
 
+        // Отключить звук Windows при лишнем backspace (пустое поле)
+        searchTextField.actionMap.put("beep", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {}
+        })
+
         // Focus glow: accent bottom border with subtle glow
         val unfocusedBorder = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, DynamicColor.BorderColor),
@@ -187,6 +192,10 @@ class WelcomePanel(
 
     private fun createHostPanel(): JComponent {
         val panel = JPanel(BorderLayout())
+        // Отключить звук при backspace в дереве без выделенного узла
+        hostTree.actionMap.put("beep", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {}
+        })
         hostTree.actionMap.put("find", object : AnAction() {
             override fun actionPerformed(evt: AnActionEvent) {
                 searchTextField.requestFocusInWindow()

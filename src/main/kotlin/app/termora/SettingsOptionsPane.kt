@@ -706,7 +706,7 @@ class SettingsOptionsPane : OptionsPane() {
         private fun p(): JPanel {
             val layout = FormLayout(
                 "left:pref, ${FORM_MARGIN}, default:grow",
-                "pref, 24dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref"
+                "pref, 30dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref, 6dlu, pref"
             )
 
 
@@ -719,17 +719,29 @@ class SettingsOptionsPane : OptionsPane() {
                 .layout(layout).debug(false)
                 .add(I18n.getString("termora.settings.about.termora", Application.getVersion()))
                 .xyw(1, rows, 3, "center, fill").apply { rows += step }
-                .add("${I18n.getString("termora.settings.about.author")}:").xy(1, rows)
-                .add(createHyperlink("https://github.com/hstyi")).xy(3, rows).apply { rows += step }
-                .add("${I18n.getString("termora.settings.about.source")}:").xy(1, rows)
+                .add("Termorator:").xy(1, rows)
+                .add(createHyperlink("https://github.com/king-of-Jupiter/termora", "king-of-Jupiter/termora (fork)"))
+                .xy(3, rows).apply { rows += step }
+                .add("Based on:").xy(1, rows)
+                .add(
+                    createHyperlink(
+                        "https://github.com/TermoraDev/termora",
+                        "TermoraDev/termora by hstyi",
+                    )
+                ).xy(3, rows).apply { rows += step }
+                .add("${I18n.getString("termora.settings.about.source")} (fork):").xy(1, rows)
+                .add(createHyperlink("https://github.com/king-of-Jupiter/termora")).xy(3, rows).apply { rows += step }
+                .add("${I18n.getString("termora.settings.about.source")} (upstream):").xy(1, rows)
                 .add(
                     createHyperlink(
                         "https://github.com/TermoraDev/termora/tree/${branch}",
                         "https://github.com/TermoraDev/termora",
                     )
                 ).xy(3, rows).apply { rows += step }
-                .add("${I18n.getString("termora.settings.about.issue")}:").xy(1, rows)
-                .add(createHyperlink("https://github.com/TermoraDev/termora/issues")).xy(3, rows).apply { rows += step }
+                .add("${I18n.getString("termora.settings.about.author")} (upstream):").xy(1, rows)
+                .add(createHyperlink("https://github.com/hstyi")).xy(3, rows).apply { rows += step }
+                .add("Лицензия:").xy(1, rows)
+                .add(createHyperlink("https://opensource.org/license/agpl-v3", "AGPL-3.0")).xy(3, rows).apply { rows += step }
                 .add("${I18n.getString("termora.settings.about.third-party")}:").xy(1, rows)
                 .add(
                     createHyperlink(

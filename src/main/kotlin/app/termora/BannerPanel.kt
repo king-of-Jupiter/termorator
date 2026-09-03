@@ -8,11 +8,12 @@ import javax.swing.UIManager
 
 class BannerPanel(fontSize: Int = 11, val beautiful: Boolean = false) : JComponent() {
     private val banner = """
-  ______                                    
- /_  __/__  _________ ___  ____  _________ _
-  / / / _ \/ ___/ __ `__ \/ __ \/ ___/ __ `/
- / / /  __/ /  / / / / / / /_/ / /  / /_/ / 
-/_/  \___/_/  /_/ /_/ /_/\____/_/   \__,_/  
+  _______                                    _             
+ |__   __|__ _ __ _ __ ___   ___  _ __ __ _| |_ ___  _ __ 
+    | |/ _ \ '__| '_ ` _ \ / _ \| '__/ _` | __/ _ \| '__|
+    | |  __/ |  | | | | | | (_) | | | (_| | || (_) | |   
+    |_|\___|_|  |_| |_| |_|\___/|_|  \__,_|\__\___/|_|   
+              Termorator — based on Termorator
 """.trimIndent().lines()
 
     init {

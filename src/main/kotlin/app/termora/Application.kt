@@ -193,7 +193,7 @@ object Application {
     }
 
     fun getName(): String {
-        return "Termora"
+        return "Termorator"
     }
 
     fun browse(uri: URI, async: Boolean = true) {

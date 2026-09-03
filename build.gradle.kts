@@ -23,7 +23,7 @@ plugins {
 }
 
 
-group = "app.termora"
+group = "app.termorator"
 version = rootProject.projectDir.resolve("VERSION").readText().trim()
 
 val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
@@ -410,8 +410,8 @@ tasks.register<Exec>("jpackage") {
     arguments.addAll(listOf("--temp", "$buildDir/jpackage"))
     arguments.addAll(listOf("--dest", "$buildDir/distributions"))
     arguments.addAll(listOf("--java-options", options.joinToString(StringUtils.SPACE)))
-    arguments.addAll(listOf("--vendor", "TermoraDev"))
-    arguments.addAll(listOf("--copyright", "TermoraDev"))
+    arguments.addAll(listOf("--vendor", "Termorator"))
+    arguments.addAll(listOf("--copyright", "Termorator (based on TermoraDev)"))
 
     if (os.isMacOsX) {
         arguments.addAll(listOf("--mac-package-name", project.name.uppercaseFirstChar()))
@@ -438,7 +438,7 @@ tasks.register<Exec>("jpackage") {
         arguments.add(if (isDeb) "deb" else "app-image")
         if (isDeb) {
             arguments.add("--linux-deb-maintainer")
-            arguments.add("support@termora.app")
+            arguments.add("support@termorator.app")
         }
     } else {
         throw UnsupportedOperationException()

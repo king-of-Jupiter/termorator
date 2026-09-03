@@ -64,13 +64,13 @@ jobs:
           fi
           wget -q -O $RUNNER_TEMP/java_package.tar.gz https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-${{ env.JBR_MAJOR }}-osx-$ARCH-${{ env.JBR_PATCH }}.tar.gz
 
-      # install jdk
+      # install jdk (JBR 25)
       - name: Installing Java
         uses: actions/setup-java@v4
         with:
           distribution: 'jdkfile'
           jdkFile: ${{ runner.temp }}/java_package.tar.gz
-          java-version: '21.0.7'
+          java-version: '25'
 
       - uses: actions/cache@v4
         with:
@@ -100,6 +100,13 @@ jobs:
       - name: Upload dmg artifact
         uses: actions/upload-artifact@v4
         with:
-          name: termora-osx-dmg-${{ runner.arch }}
+          name: termorator-osx-dmg-${{ runner.arch }}
           path: |
             build/distributions/*.dmg
+
+      - name: Upload zip artifact (macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: termorator-osx-zip-${{ runner.arch }}
+          path: |
+            build/distributions/*.zip
